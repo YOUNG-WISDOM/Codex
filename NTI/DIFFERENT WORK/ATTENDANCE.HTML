@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Attendance —NKORANZA TECHNICAL INSTITUTE </title>
+  <link rel="stylesheet" href="index.css">
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    body{padding:clamp(10px,2vw,24px)}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+    .badge.clickable{cursor:pointer;transition:transform .13s ease}
+    .badge.clickable:hover{transform:scale(1.02)}
+    .status-toggle{display:inline-flex;gap:6px;flex-wrap:wrap}
+    .status-btn{border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.04);color:#cbd5e1;padding:6px 10px;border-radius:999px;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s ease}
+    .status-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,0.09)}
+    .status-btn.active.present{background:#16a34a;color:#fff;border-color:#22c55e}
+    .status-btn.active.absent{background:#dc2626;color:#fff;border-color:#ef4444}
+    @media (max-width:640px){.top{flex-direction:column;align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <main class="attendance-shell">
+    <video class="hero-video" autoplay muted loop playsinline poster="../assets/images/ii.png">
+      <source src="../assets/videos/hero.mp4" type="video/mp4">
+    </video>
+    <div class="hero-overlay"></div>
+    <div class="glow glow-one"></div>
+    <div class="glow glow-two"></div>
+    <div class="attendance-page">
+      <div class="top">
+      <div>
+        <img class="brand-logo" src="nti_logo.png" alt="NKORANZA TECHNICAL INSTITUTE logo">
+        <h2 style="margin:0">Attendance</h2>
+        <div class="small">NKORANZA TECHNICAL INSTITUTE</div>
+      </div>
+    <div style="position:relative;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <a href="index.html"><button type="button" class="btn light">Back</button></a>
+      <button type="button" class="btn light" id="clearRecordsBtn">Clear Records</button>
+      <button type="button" class="btn light" id="importBtn">Import</button>
+      <input type="file" id="importFileInput" style="display:none" />
+      <button type="button" class="btn light" id="topSaveBtn">Save</button>
+      <div id="exportMenu" style="position:absolute;top:calc(100% + 8px);right:0;display:none;min-width:160px;padding:10px;background:rgba(15,23,42,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:16px;box-shadow:0 18px 60px rgba(15,23,42,0.2);z-index:10">
+        <div style="margin-bottom:8px;color:#cbd5e1;font-size:13px;font-weight:600">Choose format</div>
+        <button type="button" class="btn light" data-format="pdf" style="width:100%;margin-bottom:8px;text-align:left">PDF</button>
+        <button type="button" class="btn light" data-format="csv" style="width:100%;margin-bottom:8px;text-align:left">CSV</button>
+        <button type="button" class="btn light" data-format="json" style="width:100%;text-align:left">JSON</button>
+      </div>
+      <div id="saveChoiceOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.75);backdrop-filter:blur(5px);align-items:center;justify-content:center;z-index:25">
+        <div style="background:#0f172a;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(15,23,42,0.35)">
+          <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:10px">Save records</div>
+          <div style="color:#cbd5e1;margin-bottom:20px">Do you want default save or choose the save format yourself?</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+            <button type="button" class="btn" id="savePdfBtn" style="flex:1;min-width:100px">Save as PDF</button>
+            <button type="button" class="btn" id="saveExcelBtn" style="flex:1;min-width:100px">Save as Excel</button>
+            <button type="button" class="btn light" id="customSaveBtn" style="flex:1;min-width:100px">Custom Save</button>
+            <button type="button" class="btn light" id="cancelSaveChoiceBtn" style="flex:1;min-width:100px">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom save overlay: choose date, title and class to apply to all records -->
+      <div id="customSaveOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;z-index:30">
+        <div style="background:#0b1220;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;max-width:420px;width:100%;box-shadow:0 28px 70px rgba(2,6,23,0.5);color:#e6eef8">
+          <div style="font-size:18px;font-weight:700;margin-bottom:10px">Custom Save</div>
+          <div style="display:grid;gap:10px;margin-bottom:12px">
+            <label class="small">Document Title
+              <input id="customSaveTitle" placeholder="e.g., Class Roll — Biology" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#e6eef8" />
+            </label>
+            <label class="small">Class
+              <input id="customSaveClass" placeholder="e.g., Form 2" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#e6eef8" />
+            </label>
+            <label class="small">Date
+              <input id="customSaveDate" type="date" class="date-picker" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#e6eef8" />
+            </label>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button type="button" class="btn light" id="customSaveCancel">Cancel</button>
+            <button type="button" class="btn" id="customSaveConfirm">Save & Export</button>
+          </div>
+        </div>
+      </div>
+      <div id="confirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;z-index:20">
+        <div style="background:#0f172a;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:24px;max-width:320px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(15,23,42,0.35)">
+          <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:12px">Clear all attendance records?</div>
+          <div style="color:#cbd5e1;margin-bottom:20px">Are you sure you want to delete every saved record?</div>
+          <div style="display:flex;gap:10px;justify-content:center">
+            <button type="button" class="btn light" id="cancelClearBtn">No</button>
+            <button type="button" class="btn" id="confirmClearBtn">Yes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="importFixOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.75);backdrop-filter:blur(5px);align-items:center;justify-content:center;z-index:30">
+    <div style="background:#0f172a;border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:20px;max-width:420px;width:100%;text-align:left;box-shadow:0 28px 70px rgba(2,6,23,0.45)">
+      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px">Imported records missing Class or Course</div>
+      <div style="color:#cbd5e1;margin-bottom:12px">Some imported rows are missing Class or Course. Provide defaults to apply to those records, or cancel to abort the import.</div>
+      <div style="display:grid;gap:8px;margin-bottom:12px">
+        <label class="small">Default Class
+          <input id="importDefaultClass" placeholder="e.g., Form 2" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#e6eef8" />
+        </label>
+        <label class="small">Default Course
+          <input id="importDefaultCourse" placeholder="e.g., Biology" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#e6eef8" />
+        </label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" class="btn light" id="cancelImportDefaultsBtn">Cancel</button>
+        <button type="button" class="btn" id="applyImportDefaultsBtn">Apply & Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="attForm">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+        <div>
+          <label>Student Name</label>
+          <input name="name" required placeholder="Full name">
+        </div>
+        <div>
+          <label>Class</label>
+          <input name="class" required placeholder="e.g., Form 2">
+        </div>
+        <div>
+          <label>Course</label>
+          <input name="course" required placeholder="e.g., Biology">
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="date" name="date" class="date-picker" required>
+        </div>
+        <div>
+          <label>Attendance</label>
+          <div class="controls">
+            <div class="custom-select" id="attendanceSelect" role="combobox" aria-haspopup="listbox" aria-expanded="false" tabindex="0">
+              <button type="button" class="cs-trigger" aria-label="Attendance">
+                <span class="cs-value">Present</span>
+                <span class="cs-caret">▾</span>
+              </button>
+              <ul class="cs-options" role="listbox">
+                <li class="cs-option" data-value="present" role="option" aria-selected="true">Present</li>
+                <li class="cs-option" data-value="absent" role="option" aria-selected="false">Absent</li>
+              </ul>
+              <input type="hidden" name="present" id="attendanceValue" value="present">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px"><button type="submit" class="btn light">Save</button></div>
+    </form>
+  </div>
+
+      <div class="card" style="margin-top:14px">
+    <h3 style="margin-top:0">Records</h3>
+    <div class="table-wrap">
+      <table id="table"><thead><tr><th>Roll No</th><th>Name</th><th>Course</th><th>Class</th><th>Date</th><th>Present</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <script>
+    const key = 'attendance_records';
+
+    function getSchoolName(){
+      const el = document.querySelector('.top .small');
+      return (el && el.textContent && el.textContent.trim()) || document.title || 'Attendance';
+    }
+
+    function sanitizeFilename(s){
+      return String(s||'').replace(/\s+/g,'-').replace(/[^a-zA-Z0-9\-_]/g,'');
+    }
+
+    function getTodayISO(){
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function saveRecords(records){
+      localStorage.setItem(key, JSON.stringify(records));
+      setRecordsSaved(false);
+    }
+
+    function load(){
+      try{
+        const data = JSON.parse(localStorage.getItem(key)||'[]');
+        render(Array.isArray(data) ? data : []);
+      }catch(e){render([])}
+    }
+
+    function escapeHtml(str){
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function render(records){
+      const tbody = document.querySelector('#table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!Array.isArray(records) || !records.length) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `<td colspan="6" style="text-align:center;padding:16px;color:#94a3b8">No records found.</td>`;
+        tbody.appendChild(emptyRow);
+        return;
+      }
+      records.forEach((record, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${escapeHtml(record.name)}</td>
+          <td>${escapeHtml(record.course)}</td>
+          <td>${escapeHtml(record.class)}</td>
+          <td>${escapeHtml(formatLongDate(record.date || getTodayISO()))}</td>
+          <td>
+            <div class="status-toggle" role="group" aria-label="Attendance status">
+              <button type="button" class="status-btn ${record.present ? 'active present' : ''}" data-index="${index}" data-action="present">Present</button>
+              <button type="button" class="status-btn ${record.present ? '' : 'active absent'}" data-index="${index}" data-action="absent">Absent</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+        row.querySelectorAll('.status-btn').forEach((button) => {
+          button.addEventListener('click', () => {
+            updateRecordStatus(Number(button.dataset.index), button.dataset.action === 'present');
+          });
+        });
+      });
+    }
+
+    function updateRecordStatus(index, present) {
+      const records = getRecords();
+      if (!records[index]) return;
+      records[index].present = present;
+      saveRecords(records);
+      load();
+    }
+
+    // Custom select (dark dropdown) with keyboard support
+    (function(){
+      const cs = document.getElementById('attendanceSelect');
+      const hidden = document.getElementById('attendanceValue');
+      if(!cs || !hidden) return;
+      const trigger = cs.querySelector('.cs-trigger');
+      const options = Array.from(cs.querySelectorAll('.cs-option'));
+      const valueEl = cs.querySelector('.cs-value');
+      let openState = false;
+      let focused = -1;
+
+      function open(){ cs.classList.add('open'); cs.setAttribute('aria-expanded','true'); openState = true; }
+      function close(){ cs.classList.remove('open'); cs.setAttribute('aria-expanded','false'); openState = false; focused = -1; options.forEach(o=>o.classList.remove('focused')); }
+      function setValue(v){
+        hidden.value = v;
+        cs.classList.remove('present','absent');
+        cs.classList.add(v === 'present' ? 'present' : 'absent');
+        if(valueEl) valueEl.textContent = v === 'present' ? 'Present' : 'Absent';
+        options.forEach(o=> o.setAttribute('aria-selected', o.dataset.value === v ? 'true' : 'false'));
+      }
+
+      trigger.addEventListener('click', (e)=>{ e.preventDefault(); if(openState) close(); else open(); });
+      options.forEach((opt, idx)=>{
+        opt.addEventListener('click', ()=>{ setValue(opt.dataset.value); close(); });
+        opt.addEventListener('mouseenter', ()=>{ options.forEach(o=>o.classList.remove('focused')); opt.classList.add('focused'); focused = idx; });
+      });
+
+      cs.addEventListener('keydown', (e)=>{
+        if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+          e.preventDefault(); if(!openState) open(); const dir = e.key === 'ArrowDown' ? 1 : -1; focused = (focused + dir + options.length) % options.length; options.forEach((o,i)=> o.classList.toggle('focused', i === focused)); options[focused].scrollIntoView({block:'nearest'});
+        } else if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault(); if(openState && focused >= 0){ setValue(options[focused].dataset.value); close(); } else { open(); }
+        } else if(e.key === 'Escape'){ close(); }
+      });
+
+      document.addEventListener('click', e=>{ if(!cs.contains(e.target)) close(); });
+      // initialize
+      setValue(hidden.value || 'present');
+    })();
+
+    const savedExportKey = 'attendance_records_saved';
+
+    function getRecords(){
+      return JSON.parse(localStorage.getItem(key)||'[]');
+    }
+
+    function getRecordsSaved(){
+      return localStorage.getItem(savedExportKey) === '1';
+    }
+
+    function setRecordsSaved(value){
+      localStorage.setItem(savedExportKey, value ? '1' : '0');
+    }
+
+    function clearSavedFlag(){
+      localStorage.removeItem(savedExportKey);
+    }
+
+    function downloadFile(filename, content, type){
+      const blob = new Blob([content], { type });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    function getExportDate(){
+      return window._exportDateOverride || new Date().toISOString().split('T')[0];
+    }
+
+    function formatLongDate(value){
+      const date = new Date(value);
+      if(isNaN(date)) return value;
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    function exportCSV(records){
+      const header = ['Roll No','Name','Course','Class','Date','Attendance'];
+      const rows = records.map((r,i)=>[
+        i+1,
+        r.name,
+        r.course,
+        r.class,
+        formatLongDate(r.date),
+        r.present ? 'Present' : 'Absent'
+      ]);
+      const csv = [header, ...rows].map(row=>row.map(value=>`"${String(value).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+      const name = sanitizeFilename(getSchoolName());
+      downloadFile(`${name}-${getExportDate()}.csv`, csv, 'text/csv;charset=utf-8;');
+      setRecordsSaved(true);
+    }
+
+    function exportJSON(records){
+      const json = JSON.stringify(records.map((r,i)=>({
+        roll: i+1,
+        name: r.name,
+        course: r.course,
+        class: r.class,
+        date: formatLongDate(r.date),
+        attendance: r.present ? 'Present' : 'Absent'
+      })), null, 2);
+      const name = sanitizeFilename(getSchoolName());
+      downloadFile(`${name}-${getExportDate()}.json`, json, 'application/json;charset=utf-8;');
+      setRecordsSaved(true);
+    }
+
+    function exportExcel(records){
+      const headers = ['Roll No','Name','Course','Class','Date','Attendance'];
+      const rows = records.map((r,i)=>[
+        i+1,
+        r.name,
+        r.course,
+        r.class,
+        formatLongDate(r.date),
+        r.present ? 'Present' : 'Absent'
+      ]);
+      let html = '<table><thead><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+      rows.forEach(row => {
+        html += '<tr>' + row.map(cell => `<td>${String(cell || '')}</td>`).join('') + '</tr>';
+      });
+      html += '</tbody></table>';
+      const name = sanitizeFilename(getSchoolName());
+      downloadFile(`${name}-${getExportDate()}.xls`, html, 'application/vnd.ms-excel');
+      setRecordsSaved(true);
+    }
+
+    function exportPDF(records){
+      if(!(window.jspdf && window.jspdf.jsPDF)){
+        alert('PDF export is not available. Please check your internet connection.');
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+      const margin = 40;
+      let y = 40;
+      const exportDate = getExportDate();
+      doc.setFontSize(16);
+      const titleText = window._exportTitleOverride || `${getSchoolName()} — ${exportDate}`;
+      doc.text(titleText, margin, y);
+      y += 30;
+      doc.setFontSize(10);
+      const headers = ['Roll', 'Name', 'Course', 'Class', 'Date', 'Attendance'];
+      const pageHeight = doc.internal.pageSize.height - margin;
+      const colWidths = [28, 140, 120, 100, 110, 80];
+      const tableWidth = colWidths.reduce((sum, width) => sum + width, 0);
+      const rowHeight = 18;
+      const getCellLines = (text, width) => doc.splitTextToSize(String(text), width - 8);
+
+      const drawLine = (x1, y1, x2, y2) => doc.line(x1, y1, x2, y2);
+      const drawRow = (cells, isHeader = false) => {
+        const cellLines = cells.map((text, index) => getCellLines(text, colWidths[index]));
+        const maxLines = Math.max(...cellLines.map(lines => lines.length));
+        const height = maxLines * rowHeight + 8;
+        if(y + height > pageHeight){
+          doc.addPage();
+          y = margin;
+        }
+
+        let x = margin;
+        const rowTop = y;
+        const rowBottom = y + height;
+        if(isHeader){
+          doc.setFillColor(245, 245, 245);
+          doc.rect(margin, rowTop, tableWidth, height, 'F');
+          doc.setFont(undefined, 'bold');
+        } else {
+          doc.setFont(undefined, 'normal');
+        }
+
+        cellLines.forEach((lines, index) => {
+          doc.text(lines, x + 4, y + 14);
+          drawLine(x, rowTop, x, rowBottom);
+          x += colWidths[index];
+        });
+        drawLine(x, rowTop, x, rowBottom);
+        drawLine(margin, rowBottom, margin + tableWidth, rowBottom);
+        y += height;
+      };
+
+      drawLine(margin, y, margin + tableWidth, y);
+      drawRow(headers, true);
+      records.forEach((r, i) => {
+        drawRow([i + 1, r.name, r.course, r.class, formatLongDate(r.date), r.present ? 'Present' : 'Absent']);
+      });
+      doc.save(`${sanitizeFilename(getSchoolName())}-${exportDate}.pdf`);
+      setRecordsSaved(true);
+    }
+
+    function isPDFExportAvailable(){
+      return Boolean(window.jspdf && window.jspdf.jsPDF);
+    }
+
+    function exportDefault(records){
+      if(isPDFExportAvailable()){
+        exportPDF(records);
+      } else {
+        exportCSV(records);
+      }
+    }
+
+    function parseCSVRow(row){
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        const char = row[i];
+        if (char === '"') {
+          if (inQuotes && row[i + 1] === '"') {
+            current += '"';
+            i += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current);
+      return result.map(cell => cell.trim());
+    }
+
+    function mapImportRecord(raw){
+      const normalized = {};
+      Object.keys(raw || {}).forEach(key => {
+        normalized[key.trim().toLowerCase()] = String(raw[key]).trim();
+      });
+      const attendanceValue = normalized.attendance || normalized.present || '';
+      return {
+        id: Date.now() + Math.floor(Math.random() * 10000),
+        name: normalized.name || normalized.student || normalized['student name'] || '',
+        class: normalized.class || normalized.grade || normalized.form || '',
+        course: normalized.course || normalized.subject || '',
+        date: normalized.date || getTodayISO(),
+        present: /(present|yes|true|1)/i.test(attendanceValue)
+      };
+    }
+
+    function parseImportJSON(text){
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) throw new Error('JSON import must be an array of records.');
+      return data.map(mapImportRecord).filter(r => r.name && r.course && r.class && r.date);
+    }
+
+    function parseImportCSV(text){
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      if (lines.length < 2) throw new Error('CSV import must contain a header row and at least one record.');
+      const headers = parseCSVRow(lines.shift()).map(h => h.trim().toLowerCase());
+      return lines.map(line => {
+        const values = parseCSVRow(line);
+        const record = {};
+        headers.forEach((header, index) => {
+          record[header] = values[index] || '';
+        });
+        return mapImportRecord(record);
+      }).filter(r => r.name);
+    }
+
+    function decodeEntities(str){
+      const txt = document.createElement('textarea');
+      txt.innerHTML = str || '';
+      return txt.value;
+    }
+
+    function parseGenericDocumentText(text){
+      text = decodeEntities(String(text || '')).replace(/\u00A0/g, ' ');
+      const lines = text.split(/\r?\n|\r/)
+        .map(line => line.trim())
+        .filter(Boolean);
+      if (!lines.length) throw new Error('No text content could be extracted from the document.');
+      const records = [];
+      const headerCandidates = lines[0].split(/[,\t|;]+/).map(t => t.trim().toLowerCase());
+      const hasHeader = headerCandidates.some(h => ['name', 'student', 'course', 'class', 'date', 'attendance', 'present'].includes(h));
+      if (hasHeader && lines.length > 1) {
+        const headers = headerCandidates;
+        lines.slice(1).forEach(line => {
+          const values = line.split(/[,\t|;]+/).map(value => value.trim());
+          const record = {};
+          headers.forEach((header, index) => {
+            record[header] = values[index] || '';
+          });
+          records.push(mapImportRecord(record));
+        });
+      } else {
+        lines.forEach(line => {
+          const possibleNames = line.split(/[,;|]+/).map(value => value.trim()).filter(Boolean);
+          if (possibleNames.length === 1) {
+            records.push(mapImportRecord({ name: possibleNames[0] }));
+          } else if (possibleNames.length > 1) {
+            possibleNames.forEach(name => records.push(mapImportRecord({ name })));
+          }
+        });
+      }
+      return records.filter(r => r.name);
+    }
+
+    async function parseImportDOCX(file){
+      // Require JSZip for reliable DOCX imports (DOCX are zipped XML files).
+      if (typeof JSZip === 'undefined') {
+        alert('DOCX import requires JSZip. Please include JSZip or export the document as TXT/CSV and import that instead.');
+        return [];
+      }
+      try {
+        if (typeof JSZip !== 'undefined') {
+          const zip = await JSZip.loadAsync(file);
+          const documentEntry = zip.file('word/document.xml');
+          if (documentEntry) {
+            const xmlText = await documentEntry.async('text');
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+            const wordNS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+            let paragraphs = Array.from(xmlDoc.getElementsByTagNameNS(wordNS, 'p'));
+            if (!paragraphs.length) {
+              paragraphs = Array.from(xmlDoc.getElementsByTagName('p'));
+            }
+            let lines = [];
+            if (paragraphs.length) {
+              lines = paragraphs.map(p => {
+                const textNodes = Array.from(p.getElementsByTagNameNS(wordNS, 't'));
+                const rawText = textNodes.length ? textNodes.map(node => node.textContent).join('') : '';
+                return rawText.trim();
+              }).filter(Boolean);
+            }
+            if (!lines.length) {
+              const matches = [...xmlText.matchAll(/<w:t[^>]*>(.*?)<\/w:t>/gsi)];
+              if (matches.length) {
+                const textContent = matches.map(m => decodeEntities(m[1])).join(' ');
+                lines = textContent.split(/\r?\n|\r/).map(line => line.trim()).filter(Boolean);
+              }
+            }
+            if (!lines.length) {
+              return parseGenericDocumentText(xmlText);
+            }
+            const headerLine = lines.shift();
+            const candidateHeaders = headerLine.split(/\s{2,}|,|\t/).map(h => h.trim().toLowerCase()).filter(Boolean);
+            if (!candidateHeaders.some(h => ['name', 'student', 'course', 'class', 'date', 'attendance', 'present'].includes(h)) && lines.length) {
+              return parseGenericDocumentText([headerLine, ...lines].join('\n'));
+            }
+            return lines.map(line => {
+              const values = line.split(/\s{2,}|,|\t/).map(value => value.trim());
+              const record = {};
+              candidateHeaders.forEach((header, index) => {
+                record[header] = values[index] || '';
+              });
+              return mapImportRecord(record);
+            }).filter(r => r.name);
+          }
+        }
+      } catch (e) {
+        console.warn('DOCX parsing failed, falling back to text extraction:', e);
+      }
+      const text = await file.text();
+      return parseGenericDocumentText(text);
+    }
+
+    async function parseImportDOC(file){
+      try {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        const runs = [];
+        let run = '';
+        for (let i = 0; i < bytes.length; i++) {
+          const b = bytes[i];
+          if (b === 0x09 || b === 0x0a || b === 0x0d || (b >= 0x20 && b <= 0x7e)) {
+            run += String.fromCharCode(b);
+          } else {
+            if (run.length >= 4) {
+              runs.push(run);
+            }
+            run = '';
+          }
+        }
+        if (run.length >= 4) {
+          runs.push(run);
+        }
+        const text = runs.join(' ').replace(/\s+/g, ' ').trim();
+        return parseGenericDocumentText(text);
+      } catch (e) {
+        console.warn('DOC import failed:', e);
+        return [];
+      }
+    }
+
+    let _pendingImportRecords = null;
+
+    function importRecords_finalize(newRecords){
+      const existing = getRecords();
+      const merged = [...newRecords, ...existing];
+      saveRecords(merged);
+      load();
+      alert(`${newRecords.length} records imported successfully.`);
+    }
+
+    function importRecords(newRecords){
+      if (!Array.isArray(newRecords) || !newRecords.length) {
+        alert('No valid attendance records were found in the imported file.');
+        return;
+      }
+      const needsClass = newRecords.some(r => !r.class);
+      const needsCourse = newRecords.some(r => !r.course);
+      if (needsClass || needsCourse) {
+        // show overlay asking for defaults
+        _pendingImportRecords = newRecords;
+        document.getElementById('importDefaultClass').value = '';
+        document.getElementById('importDefaultCourse').value = '';
+        document.getElementById('importFixOverlay').style.display = 'flex';
+        return;
+      }
+      importRecords_finalize(newRecords);
+    }
+
+    const importBtn = document.getElementById('importBtn');
+    const importFileInput = document.getElementById('importFileInput');
+
+    importBtn.addEventListener('click', ()=>{
+      importFileInput.click();
+    });
+
+    importFileInput.addEventListener('change', async e=>{
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const lowerName = file.name.toLowerCase();
+        let records = [];
+        if (lowerName.endsWith('.docx')) {
+          records = await parseImportDOCX(file);
+        } else if (lowerName.endsWith('.pdf')){
+          try{ records = await parsePDF(file); }catch(e){ console.warn(e); }
+        } else if (lowerName.endsWith('.epub')){
+          try{ records = await parseArchiveText(file); }catch(e){ console.warn(e); }
+        } else if (lowerName.endsWith('.rtf')){
+          const txt = await file.text(); records = parseRTF(txt);
+        } else if (lowerName.endsWith('.html') || lowerName.endsWith('.htm')){
+          const txt = await file.text(); records = parseHTML(txt);
+        } else if (lowerName.endsWith('.doc')){
+          records = await parseImportDOC(file);
+        } else if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')){
+          // try reading as binary and attempt to extract plain text (basic)
+          try{ const txt = await file.text(); records = parseGenericDocumentText(txt); }catch(e){ console.warn(e); }
+        } else {
+          const text = await file.text();
+          if (lowerName.endsWith('.json')) {
+            records = parseImportJSON(text);
+          } else if (lowerName.endsWith('.csv') || lowerName.endsWith('.tsv') || lowerName.endsWith('.txt')) {
+            records = parseImportCSV(text);
+          } else {
+            try {
+              records = parseImportJSON(text);
+            } catch (jsonError) {
+              try {
+                records = parseImportCSV(text);
+              } catch (csvError) {
+                records = parseGenericDocumentText(text);
+              }
+            }
+          }
+        }
+        if (records.length) {
+          importRecords(records);
+        } else {
+          alert('No valid attendance records were found in the imported file.');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Unable to import file. ' + (error.message || 'Please check the file content and try again.'));
+      } finally {
+        e.target.value = '';
+      }
+    });
+
+    document.getElementById('attForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      const f = e.target;
+      const name = f.name.value.trim();
+      const course = f.course.value.trim();
+      let studentClass = f['class'].value.trim();
+      const rawDate = f.date && f.date.value ? f.date.value : getTodayISO();
+
+      if (!studentClass) {
+        studentClass = window.prompt('Class is required. Please enter the student\'s class:', '');
+        if (studentClass) studentClass = studentClass.trim();
+      }
+
+      if (!studentClass) {
+        alert('Please enter the student class before saving.');
+        return;
+      }
+
+      if (!name || !course) {
+        alert('Please enter the student name and course before saving.');
+        return;
+      }
+
+      const rec = {
+        id: Date.now(),
+        name,
+        class: studentClass,
+        course,
+        date: rawDate,
+        present: (f.present && f.present.value === 'present')
+      };
+
+      const arr = JSON.parse(localStorage.getItem(key)||'[]');
+      arr.unshift(rec);
+      saveRecords(arr);
+      f.reset();
+      load();
+    });
+
+    const topSaveBtn = document.getElementById('topSaveBtn');
+    const exportMenu = document.getElementById('exportMenu');
+    const formatButtons = Array.from(exportMenu.querySelectorAll('button[data-format]'));
+    const saveChoiceOverlay = document.getElementById('saveChoiceOverlay');
+    const savePdfBtn = document.getElementById('savePdfBtn');
+    const saveExcelBtn = document.getElementById('saveExcelBtn');
+    const customSaveBtn = document.getElementById('customSaveBtn');
+    const cancelSaveChoiceBtn = document.getElementById('cancelSaveChoiceBtn');
+
+    topSaveBtn.addEventListener('click', ()=>{
+      saveChoiceOverlay.style.display = 'flex';
+    });
+
+    cancelSaveChoiceBtn.addEventListener('click', ()=>{
+      saveChoiceOverlay.style.display = 'none';
+    });
+
+    savePdfBtn && savePdfBtn.addEventListener('click', ()=>{
+      const records = getRecords();
+      if(!records.length){
+        alert('No attendance records to save.');
+        return;
+      }
+      saveChoiceOverlay.style.display = 'none';
+      if(isPDFExportAvailable()) exportPDF(records);
+      else { alert('PDF export is not available. Falling back to CSV.'); exportCSV(records); }
+    });
+
+    saveExcelBtn && saveExcelBtn.addEventListener('click', ()=>{
+      const records = getRecords();
+      if(!records.length){
+        alert('No attendance records to save.');
+        return;
+      }
+      saveChoiceOverlay.style.display = 'none';
+      exportExcel(records);
+    });
+
+    customSaveBtn.addEventListener('click', ()=>{
+      saveChoiceOverlay.style.display = 'none';
+      const custom = document.getElementById('customSaveOverlay'); if(custom) custom.style.display = 'flex';
+      try{ flatpickr('#customSaveDate', { dateFormat: 'Y-m-d', defaultDate: new Date(), allowInput: true }); }catch(e){}
+    });
+
+    const customSaveCancel = document.getElementById('customSaveCancel');
+    const customSaveConfirm = document.getElementById('customSaveConfirm');
+    customSaveCancel && customSaveCancel.addEventListener('click', ()=>{ const custom=document.getElementById('customSaveOverlay'); if(custom) custom.style.display='none'; });
+    customSaveConfirm && customSaveConfirm.addEventListener('click', ()=>{
+      const title = document.getElementById('customSaveTitle').value.trim();
+      const cls = document.getElementById('customSaveClass').value.trim();
+      const dateVal = document.getElementById('customSaveDate').value.trim();
+      if(!title){ alert('Please provide a document title.'); return; }
+      if(!dateVal){ alert('Please choose a date.'); return; }
+      const records = getRecords(); if(!records.length){ alert('No attendance records to save.'); return; }
+      const updated = records.map(r=>({ ...r, date: dateVal, class: cls || r.class }));
+      saveRecords(updated);
+      window._exportTitleOverride = title; window._exportDateOverride = dateVal;
+      const custom=document.getElementById('customSaveOverlay'); if(custom) custom.style.display='none';
+      if(isPDFExportAvailable()){
+        exportPDF(updated);
+      } else {
+        exportCSV(updated);
+      }
+      window._exportTitleOverride = null; window._exportDateOverride = null;
+    });
+
+    formatButtons.forEach(button=>{
+      button.addEventListener('click', ()=>{
+        const records = getRecords();
+        if(!records.length){
+          alert('No attendance records available to save.');
+          exportMenu.style.display='none';
+          return;
+        }
+        const format = button.dataset.format;
+        if(format === 'csv') exportCSV(records);
+        else if(format === 'json') exportJSON(records);
+        else exportPDF(records);
+        exportMenu.style.display = 'none';
+      });
+    });
+
+    const confirmOverlay = document.getElementById('confirmOverlay');
+    const cancelClearBtn = document.getElementById('cancelClearBtn');
+    const confirmClearBtn = document.getElementById('confirmClearBtn');
+
+    document.getElementById('clearRecordsBtn').addEventListener('click', ()=>{
+      confirmOverlay.style.display = 'flex';
+    });
+
+    cancelClearBtn.addEventListener('click', ()=>{
+      confirmOverlay.style.display = 'none';
+    });
+
+    confirmClearBtn.addEventListener('click', ()=>{
+      const records = getRecords();
+      const alreadySaved = getRecordsSaved();
+      if(records.length && !alreadySaved){
+        try {
+          exportPDF(records);
+        } catch (exportError) {
+          console.warn('Auto-export failed during clear:', exportError);
+        }
+      }
+      localStorage.removeItem(key);
+      clearSavedFlag();
+      load();
+      confirmOverlay.style.display = 'none';
+    });
+
+    // import defaults overlay handlers
+    (function(){
+      const overlay = document.getElementById('importFixOverlay');
+      const applyBtn = document.getElementById('applyImportDefaultsBtn');
+      const cancelBtn = document.getElementById('cancelImportDefaultsBtn');
+
+      applyBtn.addEventListener('click', ()=>{
+        const defClass = document.getElementById('importDefaultClass').value.trim();
+        const defCourse = document.getElementById('importDefaultCourse').value.trim();
+        if (!_pendingImportRecords) { overlay.style.display='none'; return; }
+        _pendingImportRecords.forEach(r=>{
+          if(!r.class) r.class = defClass || r.class || '';
+          if(!r.course) r.course = defCourse || r.course || '';
+        });
+        const toImport = _pendingImportRecords;
+        _pendingImportRecords = null;
+        overlay.style.display='none';
+        importRecords_finalize(toImport);
+      });
+
+      cancelBtn.addEventListener('click', ()=>{
+        _pendingImportRecords = null;
+        overlay.style.display='none';
+        alert('Import cancelled. No records were imported.');
+      });
+    })();
+
+    document.addEventListener('click', e=>{
+      if(!exportMenu.contains(e.target) && e.target !== topSaveBtn){
+        exportMenu.style.display = 'none';
+      }
+    });
+
+    load();
+  </script>
+    </div>
+  </main>
+</body>
+</html>

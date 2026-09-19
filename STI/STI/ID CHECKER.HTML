@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Attendance-Checker — SUNYANI TECHNICAL INSTITUTE</title>
+  
+  
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      padding: clamp(10px, 2vw, 24px);
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: linear-gradient(180deg, #050814 0%, #14112f 100%);
+      color: #fff;
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .header-content img {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 4px;
+    }
+
+    .header-text h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+      color: white;
+    }
+
+    .header-text p {
+      font-size: 13px;
+      color: #b3c0dd;
+      margin: 4px 0 0 0;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: rgba(59, 130, 246, 0.8);
+      border-color: rgba(59, 130, 246, 1);
+    }
+
+    .btn.primary:hover {
+      background: rgba(37, 99, 235, 1);
+    }
+
+    .btn.danger {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: rgba(239, 68, 68, 0.7);
+    }
+
+    .btn.danger:hover {
+      background: rgba(220, 38, 38, 0.9);
+      border-color: #ef4444;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.55);
+      border: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      font-size: 20px;
+      margin: 0 0 20px 0;
+      color: #b3c0dd;
+    }
+
+    .search-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      color: #b3c0dd;
+      margin-bottom: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input {
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      color: #e6eef8;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.5);
+      background: rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .results {
+      display: grid;
+      gap: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .result-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .result-item:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(59, 130, 246, 0.5);
+      transform: translateX(4px);
+    }
+
+    .result-item .name {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+    }
+
+    .result-item .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 6px;
+      border-left: 3px solid #22c55e;
+      text-align: center;
+    }
+
+    .stat.absent {
+      border-left-color: #ef4444;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #b3c0dd;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .result-item .details {
+      font-size: 12px;
+      color: #b3c0dd;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      line-height: 1.6;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 40px 20px;
+      color: #b3c0dd;
+      font-size: 14px;
+    }
+
+    input[type=file] {
+      display: none;
+    }
+
+    .status-badge {
+      display: none;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #10b981;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-badge.loaded {
+      display: inline-block;
+      background: rgba(59, 130, 246, 0.2);
+      border-color: #3b82f6;
+      color: #93c5fd;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .header-actions {
+        justify-content: stretch;
+      }
+
+      .header-actions .btn {
+        flex: 1;
+      }
+
+      .result-item .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-content img {
+        width: 48px;
+        height: 48px;
+      }
+
+      .header-text h1 {
+        font-size: 20px;
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      .result-item {
+        padding: 12px;
+      }
+
+      .result-item .name {
+        font-size: 16px;
+      }
+
+      .stat-value {
+        font-size: 24px;
+      }
+    }
+  </style>
+<base target="_blank">
+
+<script>
+/* TOTAL OFFLINE BUILD
+   No CDN, remote stylesheet, remote JavaScript, fetch, XHR, or WebSocket is
+   used by this page. JSON and CSV work entirely offline.
+*/
+(function () {
+  const originalFetch = window.fetch;
+  window.fetch = function () {
+    return Promise.reject(new Error('Offline mode: network access is disabled.'));
+  };
+  if (window.XMLHttpRequest) {
+    const originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+      if (/^https?:\/\//i.test(String(url))) {
+        throw new Error('Offline mode: network access is disabled.');
+      }
+      return originalOpen.apply(this, arguments);
+    };
+  }
+})();
+</script>
+
+</head>
+<body>
+<div style="position:fixed;right:10px;bottom:10px;z-index:99999;background:#16a34a;color:#fff;padding:7px 11px;border-radius:999px;font:600 11px system-ui;box-shadow:0 3px 12px rgba(0,0,0,.3)">TOTAL OFFLINE • PDF FIXED</div>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <img src="wisdom.jpg" alt="SUNYANI TECHNICAL INSTITUTE logo">
+      <div class="header-text">
+        <h1>Attendance-Checker</h1>
+        <p>SUNYANI TECHNICAL INSTITUTE</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="sti.html" style="text-decoration:none"><button class="btn">← Back Home</button></a>
+      <button class="btn primary" id="importBtn">Import Data</button>
+      <button class="btn danger" id="clearBtn">Clear Records</button>
+      <span id="importStatus" class="status-badge"></span>
+      <input type="file" id="importFile" accept=".json,.xlsx,.xls,.csv,.pdf" multiple />
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Search Card -->
+    <div class="card">
+      <h2>Search Student</h2>
+      <form class="search-form" id="searchForm">
+        <div class="form-group">
+          <label>Student Name</label>
+          <input type="text" id="searchNameInput" placeholder="Enter student name..." autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Course</label>
+          <input type="text" id="searchCourseInput" placeholder="Enter course..." autocomplete="off">
+        </div>
+        <button type="submit" class="btn primary">Search</button>
+      </form>
+    </div>
+
+    <!-- Results Card -->
+    <div class="card">
+      <h2>Results</h2>
+      <div id="resultsContainer">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const storageKey = 'id_checker_records';
+    let importedRecords = [];
+
+    // Load records on page load
+    function loadRecords() {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          importedRecords = JSON.parse(stored);
+          updateImportStatus();
+        }
+      } catch (e) {
+        console.error('Failed to load records:', e);
+      }
+    }
+
+    // Save records to localStorage
+    function saveRecords() {
+      localStorage.setItem(storageKey, JSON.stringify(importedRecords));
+      updateImportStatus();
+    }
+
+    // Update import status display
+    function updateImportStatus() {
+      const badge = document.getElementById('importStatus');
+      if (badge && importedRecords.length > 0) {
+        badge.textContent = `✓ Loaded ${importedRecords.length} records`;
+        badge.className = 'status-badge loaded';
+      }
+    }
+
+    // Handle file import
+    document.getElementById('importBtn').addEventListener('click', () => {
+      document.getElementById('importFile').click();
+    });
+
+    // Clear all imported records (memory + browser storage)
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (importedRecords.length === 0) {
+        alert('There are no records to clear.');
+        return;
+      }
+      if (confirm('⚠ Are you sure you want to delete ALL imported attendance records?\n\nThis cannot be undone.')) {
+        importedRecords = [];
+        localStorage.removeItem(storageKey);
+        const badge = document.getElementById('importStatus');
+        if (badge) {
+          badge.textContent = '';
+          badge.className = 'status-badge';
+        }
+        document.getElementById('resultsContainer').innerHTML = '<div class="no-results">No records imported yet</div>';
+        alert('✓ All records cleared.');
+      }
+    });
+
+    document.getElementById('importFile').addEventListener('change', async (e) => {
+      const files = e.target.files;
+      if (!files.length) return;
+
+      try {
+        let totalRecords = 0;
+        let successCount = 0;
+
+        for (let file of files) {
+          const fileName = file.name.toLowerCase();
+          let records = [];
+
+          try {
+            if (fileName.endsWith('.json')) {
+              const text = await file.text();
+              records = JSON.parse(text);
+            } else if (fileName.endsWith('.csv')) {
+              const text = await file.text();
+              records = parseCSV(text);
+            } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+              alert('This total-offline build has no external libraries. XLSX/XLS import needs an embedded spreadsheet engine. Please use CSV or JSON in this build.'); 
+              continue;
+            } else if (fileName.endsWith('.pdf')) {
+              records = await parsePDF(file);
+            }
+
+            if (Array.isArray(records) && records.length > 0) {
+              importedRecords = importedRecords.concat(records);
+              totalRecords += records.length;
+              successCount++;
+            }
+          } catch (fileErr) {
+            console.error(`Error processing ${file.name}:`, fileErr);
+          }
+        }
+
+        if (totalRecords > 0) {
+          // Enrich newer PDF rows whose Course column is blank.
+          // If the same student already exists in another imported PDF with a
+          // known course, reuse that course. This keeps multi-day attendance
+          // searchable by Name + Course even when a PDF wrapped/omitted the
+          // course cell during PDF text extraction.
+          const knownCourses = {};
+          for (const oldRecord of importedRecords) {
+            const oldName = normalizeSearchValue(getFieldValue(
+              oldRecord, 'name', 'student', 'student name', 'full name'
+            ));
+            const oldCourse = String(getFieldValue(
+              oldRecord, 'course', 'subject', 'class', 'form'
+            ) || '').trim();
+            if (oldName && oldCourse && oldCourse.toLowerCase() !== 'unknown') {
+              knownCourses[oldName] = knownCourses[oldName] || new Set();
+              knownCourses[oldName].add(oldCourse);
+            }
+          }
+
+          for (const record of importedRecords) {
+            const course = String(getFieldValue(
+              record, 'course', 'subject', 'class', 'form'
+            ) || '').trim();
+
+            if (!course || /^unknown$/i.test(course)) {
+              const name = normalizeSearchValue(getFieldValue(
+                record, 'name', 'student', 'student name', 'full name'
+              ));
+              const choices = name && knownCourses[name]
+                ? Array.from(knownCourses[name])
+                : [];
+
+              if (choices.length === 1) {
+                record.course = choices[0];
+              }
+            }
+          }
+          // Remove duplicates based on name + course + DATE
+          // (same student on the same day must only count once, even if the same PDF is imported twice)
+          const seen = new Set();
+          importedRecords = importedRecords.filter(record => {
+            const name = String(
+              getFieldValue(record, 'name', 'student', 'student name', 'full name')
+            ).trim().replace(/\s+/g, ' ').toLowerCase();
+
+            const course = String(
+              getFieldValue(record, 'course', 'subject', 'class', 'form')
+            ).trim().replace(/\s+/g, ' ').toLowerCase();
+
+            const date = String(
+              getFieldValue(record, 'date', 'day', 'attendance date')
+            ).trim().replace(/\s+/g, ' ').toLowerCase();
+
+            const key = `${name}|${course}|${date}`;
+
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+          saveRecords();
+          alert(`✓ Successfully imported ${totalRecords} records from ${successCount} file(s)!\n\nPDF reading is working. You can now search by student name.\n\nNote: if a PDF was created without a Course value, that record will show Course as Unknown until a course value is available from another imported record.`);
+        } else {
+          alert(`⚠ No valid records extracted from the selected file(s).\n\nThe offline PDF reader supports the attendance PDFs generated by your Attendance PDF Generator.\n\nExpected data includes Name, Course (when present), Date and Present/Absent.\n\nPlease ensure your PDF files contain attendance data in formats like:\n• Name | Course | Present/Absent\n• Comma or tab-separated values\n\nTry importing your files again, or use CSV/Excel format.`);
+        }
+      } catch (err) {
+        console.error('Import error:', err);
+        alert('⚠ Error importing files: ' + err.message + '\n\nPlease check the browser console for details and try with CSV or Excel format.');
+      }
+
+      e.target.value = '';
+    });
+
+    // Parse PDF attendance sheets (SUNYANI TECHNICAL INSTITUTE daily format)
+    // Layout per student row: Roll | Name | Course | Class | Date | Attendance
+    // Handles PDF text extraction that wraps course/date fields onto separate lines.
+    // TOTAL-OFFLINE PDF READER
+    // This reader is built into the HTML file. It does not use PDF.js,
+    // a CDN, or an internet connection. It is designed for the attendance
+    // PDFs generated by the companion Attendance PDF Generator.
+    async function parsePDF(file) {
+      try {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        const raw = new TextDecoder('latin1').decode(bytes);
+
+        if (!raw.startsWith('%PDF-')) {
+          console.warn('Not a PDF file:', file.name);
+          return [];
+        }
+
+        const pages = extractOfflinePDFText(raw);
+        if (!pages.length) {
+          console.warn('No readable PDF text streams found:', file.name);
+          return [];
+        }
+
+        const records = [];
+
+        for (const items of pages) {
+          const pageRecords = parseOfflineAttendancePage(items);
+          records.push(...pageRecords);
+        }
+
+        // Some PDF generators split a row into several text fragments.
+        // Clean and de-duplicate without losing different dates.
+        const seen = new Set();
+        const clean = [];
+
+        for (const r of records) {
+          if (!r || !r.name) continue;
+
+          r.name = String(r.name).trim().replace(/\s+/g, ' ');
+          r.course = String(r.course || '').trim().replace(/\s+/g, ' ');
+          r.class = String(r.class || '').trim().replace(/\s+/g, ' ');
+          r.date = String(r.date || '').trim();
+          r.attendance = String(r.attendance || 'present').toLowerCase().trim();
+
+          if (!r.date) r.date = '';
+          if (!r.course) r.course = 'Unknown';
+          if (!r.class) r.class = '';
+
+          const key = [
+            r.name.toLowerCase(),
+            r.course.toLowerCase(),
+            r.date,
+            r.attendance
+          ].join('|');
+
+          if (!seen.has(key)) {
+            seen.add(key);
+            clean.push(r);
+          }
+        }
+
+        console.log(`✓ Offline PDF reader extracted ${clean.length} records from ${file.name}`);
+        return clean;
+
+      } catch (err) {
+        console.error('Offline PDF parsing error:', err);
+        return [];
+      }
+    }
+
+    // Extract text items from ordinary, uncompressed PDF content streams.
+    // The PDFs produced by the companion generator use this standard form.
+    function extractOfflinePDFText(raw) {
+      const pages = [];
+      const streamMatches = [];
+      const streamRe = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+      let sm;
+
+      while ((sm = streamRe.exec(raw)) !== null) {
+        streamMatches.push(sm[1]);
+      }
+
+      if (!streamMatches.length) return pages;
+
+      for (const stream of streamMatches) {
+        const items = [];
+        const btRe = /BT([\s\S]*?)ET/g;
+        let bm;
+
+        while ((bm = btRe.exec(stream)) !== null) {
+          const block = bm[1];
+
+          // The generated PDFs normally use "x y Td".
+          const td = block.match(
+            /(-?(?:\d+(?:\.\d*)?|\.\d+))\s+(-?(?:\d+(?:\.\d*)?|\.\d+))\s+Td/
+          );
+          if (!td) continue;
+
+          const x = Number(td[1]);
+          const y = Number(td[2]);
+
+          // Handle Tj strings.
+          const tjRe = /\((?:\\[\s\S]|[^\\)])*\)\s*Tj/g;
+          let tm;
+          let found = false;
+
+          while ((tm = tjRe.exec(block)) !== null) {
+            const rawString = tm[0].replace(/\s*Tj\s*$/, '');
+            const value = decodePDFLiteralString(rawString.slice(1, -1));
+            if (value.trim()) {
+              items.push({ x, y, str: value });
+              found = true;
+            }
+          }
+
+          // Also handle a simple TJ array: [(text) 0 (more)] TJ
+          if (!found) {
+            const tjArrayRe = /\[([\s\S]*?)\]\s*TJ/g;
+            let am;
+            while ((am = tjArrayRe.exec(block)) !== null) {
+              const vals = [];
+              const strRe = /\((?:\\[\s\S]|[^\\)])*\)/g;
+              let q;
+              while ((q = strRe.exec(am[1])) !== null) {
+                vals.push(decodePDFLiteralString(q[0].slice(1, -1)));
+              }
+              const value = vals.join('');
+              if (value.trim()) items.push({ x, y, str: value });
+            }
+          }
+        }
+
+        if (items.length) pages.push(items);
+      }
+
+      return pages;
+    }
+
+    function decodePDFLiteralString(s) {
+      return s
+        .replace(/\\([\\()])/g, '$1')
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\r')
+        .replace(/\\t/g, '\t')
+        .replace(/\\b/g, '\b')
+        .replace(/\\f/g, '\f')
+        .replace(/\\([0-7]{1,3})/g, (_, oct) =>
+          String.fromCharCode(parseInt(oct, 8))
+        );
+    }
+
+    function parseOfflineAttendancePage(items) {
+      // Remove obvious drawing/header noise.
+      const usable = items
+        .filter(i => i.str && i.str.trim())
+        .map(i => ({
+          x: i.x,
+          y: i.y,
+          str: i.str.trim()
+        }));
+
+      if (!usable.length) return [];
+
+      // The companion generator uses these column positions:
+      // Roll ~28/35, Name ~66/73, Course ~211/218,
+      // Class ~396/403, Date ~481/488, Attendance ~626/633.
+      //
+      // Older PDFs use the same logical six columns, while newer PDFs can
+      // wrap a long roll number vertically inside the Roll column.
+      const nameItems = usable.filter(i => i.x >= 60 && i.x < 207);
+
+      const studentNames = nameItems.filter(i =>
+        !/^(name|roll|course|class|date|attendance)$/i.test(i.str) &&
+        !/^SUNYANI TECHNICAL INSTITUTE$/i.test(i.str)
+      );
+
+      const dates = usable.filter(i => i.x >= 470 && i.x < 625 && /^\d{4}-\d{2}-\d{2}$/.test(i.str));
+      const statuses = usable.filter(i =>
+        i.x >= 620 && /^(present|absent)$/i.test(i.str)
+      );
+
+      // If there are no column-based rows, fall back to the text-line parser.
+      if (!studentNames.length) {
+        return parseOfflineTextFallback(usable);
+      }
+
+      // Sort top-to-bottom. PDF coordinates have higher Y values higher on page.
+      studentNames.sort((a, b) => b.y - a.y);
+
+      const records = [];
+
+      for (let i = 0; i < studentNames.length; i++) {
+        const nameItem = studentNames[i];
+        const nextNameY = i + 1 < studentNames.length
+          ? studentNames[i + 1].y
+          : -Infinity;
+
+        // Row band extends from this student's name down to just before
+        // the next student's name. This catches vertically wrapped roll text.
+        const upper = nameItem.y + 2;
+        const lower = nextNameY + 2;
+
+        const inBand = item => item.y <= upper && item.y > lower;
+
+        const dateItem = dates.find(inBand);
+        const statusItem = statuses.find(inBand);
+
+        // Course and class may be blank in the newer PDF layout.
+        const courseItems = usable.filter(i =>
+          i.x >= 207 && i.x < 392 && inBand(i) &&
+          !/^(course)$/i.test(i.str)
+        );
+        const classItems = usable.filter(i =>
+          i.x >= 392 && i.x < 477 && inBand(i) &&
+          !/^(class)$/i.test(i.str)
+        );
+
+        // Roll column can contain multiple vertically wrapped pieces.
+        const rollItems = usable.filter(i =>
+          i.x >= 20 && i.x < 62 && inBand(i) &&
+          !/^(roll)$/i.test(i.str)
+        ).sort((a, b) => b.y - a.y);
+
+        const roll = rollItems.map(i => i.str).join('').trim();
+
+        // Only accept a name if it looks like an actual student name.
+        const name = nameItem.str.trim();
+        if (!name || /^(name|roll|course|class|date|attendance)$/i.test(name)) {
+          continue;
+        }
+
+        let course = courseItems
+          .sort((a, b) => b.y - a.y)
+          .map(i => i.str)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        let cls = classItems
+          .sort((a, b) => b.y - a.y)
+          .map(i => i.str)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        records.push({
+          roll,
+          name,
+          course,
+          class: cls,
+          date: dateItem ? dateItem.str : '',
+          attendance: statusItem ? statusItem.str.toLowerCase() : 'present'
+        });
+      }
+
+      return records;
+    }
+
+    // Fallback for simpler PDFs where text extraction is essentially a
+    // sequence of ordinary lines.
+    function parseOfflineTextFallback(items) {
+      const lines = [];
+      const tolerance = 2.5;
+
+      const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
+
+      for (const item of sorted) {
+        let line = lines.find(l => Math.abs(l.y - item.y) <= tolerance);
+        if (!line) {
+          line = { y: item.y, items: [] };
+          lines.push(line);
+        }
+        line.items.push(item);
+      }
+
+      const textLines = lines
+        .sort((a, b) => b.y - a.y)
+        .map(l => l.items.sort((a, b) => a.x - b.x).map(i => i.str).join(' ').trim())
+        .filter(Boolean);
+
+      const records = [];
+      let headerDate = '';
+
+      for (const line of textLines) {
+        const d = line.match(/\b\d{4}-\d{2}-\d{2}\b/);
+        if (d && /SUNYANI TECHNICAL INSTITUTE/i.test(line)) {
+          headerDate = d[0];
+        }
+      }
+
+      for (const line of textLines) {
+        if (/SUNYANI TECHNICAL INSTITUTE/i.test(line)) continue;
+        if (/^Roll\s+Name\s+Course/i.test(line)) continue;
+        if (/ATTENDANCE_DATA_FORMAT/i.test(line)) continue;
+
+        const m = line.match(
+          /^\s*(\d+)\s+(\S+)\s+(.+?)\s+(form\s+\S+)\s+(\d{4}-\d{2}-\d{2})\s+(present|absent)\s*$/i
+        );
+
+        if (m) {
+          records.push({
+            roll: m[1],
+            name: m[2],
+            course: m[3],
+            class: m[4],
+            date: m[5] || headerDate,
+            attendance: m[6].toLowerCase()
+          });
+          continue;
+        }
+
+        const simple = line.match(
+          /^\s*(?:\d+\s+)?([A-Za-z][A-Za-z.'-]*)\s+(\d{4}-\d{2}-\d{2})\s+(present|absent)\s*$/i
+        );
+
+        if (simple) {
+          records.push({
+            roll: '',
+            name: simple[1],
+            course: '',
+            class: '',
+            date: simple[2] || headerDate,
+            attendance: simple[3].toLowerCase()
+          });
+        }
+      }
+
+      return records;
+    }
+
+    // Parse a complete student row after PDF line wrapping has been rebuilt.
+    function parseAttendanceRowParts(row, headerDate) {
+      try {
+        let text = row.parts.join(' ').trim();
+
+        // Normalize whitespace.
+        text = text.replace(/\s+/g, ' ');
+
+        // Attendance is the LAST field.
+        let attendance = 'present';
+        let m = text.match(/\b(absent|present)\s*$/i);
+
+        if (m) {
+          attendance = m[1].toLowerCase();
+          text = text.slice(0, m.index).trim();
+        }
+
+        // Extract date. Supports both ISO and long date formats.
+        let date = headerDate || '';
+
+        m = text.match(/\b[A-Z][a-z]+\s+\d{1,2}\s*,\s*\d{4}\b/i);
+
+        if (m) {
+          date = m[0].replace(/\s+/g, ' ').trim();
+          text = (text.slice(0, m.index) + ' ' + text.slice(m.index + m[0].length)).trim();
+        } else {
+          m = text.match(/\b\d{4}-\d{2}-\d{2}\b/);
+
+          if (m) {
+            date = m[0];
+            text = (text.slice(0, m.index) + ' ' + text.slice(m.index + m[0].length)).trim();
+          }
+        }
+
+        // Remove weekday.
+        text = text.replace(
+          /(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?/gi,
+          ' '
+        );
+
+        // Remove roll number if it is still present.
+        text = text.replace(/^\s*\d+\s+/, '').trim();
+
+        // Extract class.
+        let cls = '';
+        m = text.match(/\bForm\s+[A-Za-z0-9]+\b/i);
+
+        if (m) {
+          cls = m[0].replace(/\s+/g, ' ').trim();
+          text = (text.slice(0, m.index) + ' ' + text.slice(m.index + m[0].length)).trim();
+        }
+
+        // IMPORTANT:
+        // After removing roll, date, weekday and class:
+        // first token = student name
+        // remaining tokens = COMPLETE course.
+        //
+        // This correctly handles:
+        // "WISDOM Information Technology"
+        // even when the PDF originally extracted it as:
+        // "WISDOM Information" + "Technology"
+
+        const tokens = text.split(/\s+/).filter(Boolean);
+
+        if (tokens.length < 2) return null;
+
+        const name = tokens[0];
+        const course = tokens.slice(1).join(' ').trim();
+
+        if (!name || name.length < 2) return null;
+
+        return {
+          name,
+          course: course || 'General',
+          attendance,
+          date,
+          class: cls,
+          roll: row.roll || ''
+        };
+
+      } catch (err) {
+        console.error('Failed to parse attendance row:', err, row);
+        return null;
+      }
+    }
+
+    // Parse CSV
+    function parseCSV(text) {
+      const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+      if (lines.length < 2) return [];
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const records = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        const record = {};
+        headers.forEach((header, idx) => {
+          record[header] = values[idx] || '';
+        });
+        records.push(record);
+      }
+
+      return records;
+    }
+
+    // Normalize field names
+    function getFieldValue(record, ...fieldNames) {
+      for (const field of fieldNames) {
+        const key = Object.keys(record).find(k => k.toLowerCase() === field.toLowerCase());
+        if (key && record[key]) return record[key];
+      }
+      return '';
+    }
+
+    function normalizeSearchValue(value) {
+      return String(value || '')
+        .normalize('NFKC')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+    }
+
+    // Search functionality
+    document.getElementById('searchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      // Makes matching independent of uppercase/lowercase and extra spaces.
+      function normalizeSearchText(value) {
+        return String(value || '')
+          .normalize('NFKC')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .toLowerCase();
+      }
+
+      const searchName = normalizeSearchText(
+        document.getElementById('searchNameInput').value
+      );
+
+      const searchCourse = normalizeSearchText(
+        document.getElementById('searchCourseInput').value
+      );
+
+      if (!searchName && !searchCourse) {
+        alert('Please enter a student name or course');
+        return;
+      }
+
+      if (importedRecords.length === 0) {
+        alert('No records imported. Please import a file first.');
+        return;
+      }
+
+      const matches = importedRecords.filter(record => {
+        const name = normalizeSearchText(
+          getFieldValue(
+            record,
+            'name',
+            'student',
+            'student name',
+            'full name'
+          )
+        );
+
+        const course = normalizeSearchText(
+          getFieldValue(
+            record,
+            'course',
+            'subject',
+            'class',
+            'form'
+          )
+        );
+
+        // Search is case-insensitive.
+        // Both fields must match when both are entered.
+        const nameMatch = !searchName || name.includes(searchName);
+        const courseMatch = !searchCourse || course.includes(searchCourse);
+
+        return nameMatch && courseMatch;
+      });
+
+      displayResults(matches);
+    });
+
+    // Display results
+    function displayResults(matches) {
+      const container = document.getElementById('resultsContainer');
+
+      if (matches.length === 0) {
+        container.innerHTML = '<div class="no-results">🔍 No students found matching your search</div>';
+        return;
+      }
+
+      const results = matches.map(record => {
+        const name = getFieldValue(record, 'name', 'student', 'student name', 'full name');
+        const course = getFieldValue(record, 'course', 'subject', 'class', 'form');
+        const date = getFieldValue(record, 'date', 'day', 'attendance date');
+        const attendance = getFieldValue(record, 'attendance', 'status', 'present');
+        const present = String(attendance).toLowerCase() === 'present' ? 1 : 0;
+        const absent = present ? 0 : 1;
+        return { name, course, date, present, absent };
+      });
+
+      // Aggregate by name
+      const aggregated = {};
+      results.forEach(({ name, course, date, present, absent }) => {
+        if (!aggregated[name]) {
+          aggregated[name] = { name, courses: new Set(), dates: new Set(), present: 0, absent: 0 };
+        }
+        if (course) aggregated[name].courses.add(course);
+        if (date) aggregated[name].dates.add(date);
+        aggregated[name].present += present;
+        aggregated[name].absent += absent;
+      });
+
+      container.innerHTML = Object.values(aggregated).map(student => {
+        const dates = Array.from(student.dates);
+        let datesLine = '';
+        if (dates.length > 0) {
+          dates.sort();
+          const shown = dates.slice(0, 6).join(', ');
+          datesLine = dates.length > 6
+            ? `Dates: ${shown} +${dates.length - 6} more`
+            : `Dates: ${shown}`;
+        }
+        return `
+        <div class="result-item">
+          <div class="name">${student.name}</div>
+          <div style="font-size:12px;color:#b3c0dd;margin-bottom:12px">
+            ${Array.from(student.courses).filter(Boolean).join(', ')}
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-label">✓ Present</div>
+              <div class="stat-value">${student.present}</div>
+            </div>
+            <div class="stat absent">
+              <div class="stat-label">✗ Absent</div>
+              <div class="stat-value">${student.absent}</div>
+            </div>
+          </div>
+          <div class="details">
+            Total Attendance Records: ${student.present + student.absent}
+            ${datesLine ? `<br>${datesLine}` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+    // Load records on page load
+    loadRecords();
+  </script>
+</body>
+</html>
