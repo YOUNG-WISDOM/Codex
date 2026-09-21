@@ -1,0 +1,45 @@
+
+.Fline{ 
+  font-family: arial;
+  font-weight: bold;
+  font-size: 18px;
+  width: 280px;
+  line-height: 24px;
+  margin-bottom: 5px;;
+}
+
+.Sline{
+font-family: arial;
+font-size: 14px;
+color: rgb(96, 96, 96);
+margin-bottom: 20px;
+}
+
+.Tline{
+  font-family: arial;
+  color: rgb(96, 96, 96);
+  font-size: 14px;
+  margin-top: 0px;
+  margin-bottom: 20px;
+}
+.Fthline{
+  font-family: arial;
+  font-size: 14px;
+  color: rgb(96, 96, 96);
+  width: 280px;
+  line-height: 22px;
+  margin-bottom: 100px;
+}
+.Last{
+background-color:rgb(227, 65, 64);
+font-family: arial;
+font-size: 14px;
+text-align: center;
+color: white;
+padding-bottom: 18px;
+padding-top: 18px;
+cursor: pointer;
+}
+.shop:hover{
+  text-decoration: underline;
+}
