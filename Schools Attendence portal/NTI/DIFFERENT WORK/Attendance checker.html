@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Attendance-Checker — SUNYANI TECHNICAL INSTITUTE</title>
+  <title>Attendance-Checker — Nkoranza Technical Institute</title>
   
   
   
@@ -348,7 +348,7 @@
       <img src="wisdom.jpg" alt="SUNYANI TECHNICAL INSTITUTE logo">
       <div class="header-text">
         <h1>Attendance-Checker</h1>
-        <p> Nkoranza TECHNICAL INSTITUTE</p>
+        <p>Nkoranza TECHNICAL INSTITUTE</p>
       </div>
     </div>
     <div class="header-actions">
@@ -384,6 +384,7 @@
       </div>
     </div>
   </div>
+
   <script>
     const storageKey = 'id_checker_records';
     let importedRecords = [];
@@ -724,7 +725,7 @@
 
       const studentNames = nameItems.filter(i =>
         !/^(name|roll|course|class|date|attendance)$/i.test(i.str) &&
-        !/^SUNYANI TECHNICAL INSTITUTE$/i.test(i.str)
+        !/^NKORANZA TECHNICAL INSTITUTE$/i.test(i.str)
       );
 
       const dates = usable.filter(i => i.x >= 470 && i.x < 625 && /^\d{4}-\d{2}-\d{2}$/.test(i.str));
@@ -836,13 +837,13 @@
 
       for (const line of textLines) {
         const d = line.match(/\b\d{4}-\d{2}-\d{2}\b/);
-        if (d && /SUNYANI TECHNICAL INSTITUTE/i.test(line)) {
+        if (d && /NKORANZA TECHNICAL INSTITUTE/i.test(line)) {
           headerDate = d[0];
         }
       }
 
       for (const line of textLines) {
-        if (/SUNYANI TECHNICAL INSTITUTE/i.test(line)) continue;
+        if (/NKORANZA TECHNICAL INSTITUTE/i.test(line)) continue;
         if (/^Roll\s+Name\s+Course/i.test(line)) continue;
         if (/ATTENDANCE_DATA_FORMAT/i.test(line)) continue;
 
