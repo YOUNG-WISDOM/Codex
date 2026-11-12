@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: hex-tech-portfolio
+    runtime: python
+    plan: 0.5c-512mb
+    rootDir: Fullstack -Project
+    buildCommand: pip install -r requirements.txt
+    startCommand: waitress-serve --listen=0.0.0.0:$PORT --max-request-body-size=8192 --threads=4 server:application
+    healthCheckPath: /api/health
+    disk:
+      name: hex-tech-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: WISDOM_DATA_DIR
+        value: /var/data
+      - key: WISDOM_COOKIE_SECURE
+        value: "1"
+      - key: WISDOM_ADMIN_PASSWORD
+        sync: false

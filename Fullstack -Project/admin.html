@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10110f">
+  <title>Message inbox · HEX TECH</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, "Segoe UI", sans-serif;
+      background: #10110f;
+      color: #f3f1e9;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --muted: #9a9b95;
+      --line: #292a26;
+      --accent: #ffb400;
+      --panel: #171815;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 85% 0, rgb(255 180 0 / 8%), transparent 34rem),
+        #10110f;
+    }
+
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; }
+
+    .shell {
+      width: min(1050px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 38px 0 64px;
+    }
+
+    .topbar, .brand, .toolbar, .message-heading, .message-footer, .actions {
+      display: flex;
+      align-items: center;
+    }
+
+    .topbar, .toolbar, .message-heading, .message-footer {
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand { gap: 12px; font-size: 13px; font-weight: 750; letter-spacing: .13em; }
+    .brand-mark {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border: 1px solid rgb(255 180 0 / 42%);
+      border-radius: 10px;
+      color: var(--accent);
+      font-size: 11px;
+    }
+
+    .brand span:last-child span { color: var(--accent); }
+    .subtle-link, .muted { color: var(--muted); font-size: 12px; }
+    .subtle-link:hover { color: var(--accent); }
+
+    .intro { margin: 64px 0 28px; }
+    .eyebrow {
+      margin: 0 0 11px;
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    h1 { margin: 0; font-size: clamp(30px, 5vw, 46px); letter-spacing: -.045em; }
+    .intro p:last-child { margin: 10px 0 0; color: var(--muted); font-size: 14px; }
+
+    .toolbar { margin: 25px 0 16px; }
+    .search {
+      width: min(420px, 100%);
+      min-height: 44px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      outline: none;
+      background: var(--panel);
+      color: inherit;
+    }
+
+    .search:focus, .login-input:focus { border-color: var(--accent); }
+    .count { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+    .selection-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 14px;
+      padding: 11px 13px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: rgb(255 255 255 / 2%);
+    }
+
+    .selection-tools, .select-all { display: flex; align-items: center; gap: 10px; }
+    .select-all, .selected-count { color: var(--muted); font-size: 11px; }
+    .select-all { cursor: pointer; }
+    .select-all input, .message-select { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+    .message-select { flex: 0 0 auto; margin-top: 2px; }
+    .sender-group { display: flex; min-width: 0; align-items: flex-start; gap: 12px; }
+    .button-danger { border-color: #65332f; color: #ffaaa1; }
+    .button-danger:hover:not(:disabled) { border-color: #ff7064; background: rgb(255 112 100 / 10%); color: #ffaaa1; }
+    .button:disabled { cursor: not-allowed; opacity: .45; }
+
+    .message-list { display: grid; gap: 12px; }
+    .message-card, .login-card, .empty-state {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: linear-gradient(145deg, rgb(255 255 255 / 2%), transparent 55%), var(--panel);
+    }
+
+    .message-card { padding: 22px; }
+    .message-heading { align-items: flex-start; }
+    .sender { min-width: 0; }
+    .sender h2 { overflow-wrap: anywhere; margin: 0; font-size: 16px; }
+    .sender a { display: inline-block; margin-top: 6px; color: var(--muted); font-size: 12px; text-decoration: none; }
+    .sender a:hover { color: var(--accent); }
+    .date { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .message-body {
+      margin: 20px 0;
+      padding: 15px 16px;
+      border-left: 2px solid rgb(255 180 0 / 65%);
+      border-radius: 0 7px 7px 0;
+      background: rgb(0 0 0 / 17%);
+      color: #deddd6;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .message-footer { flex-wrap: wrap; }
+    .phone-label { color: var(--muted); font-size: 11px; }
+    .actions { justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+    .action, .button {
+      display: inline-flex;
+      min-height: 35px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: transparent;
+      color: #e8e6de;
+      font-size: 11px;
+      font-weight: 650;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .button:disabled { cursor: wait; opacity: .65; }
+    .action:hover, .button:hover { border-color: var(--accent); color: var(--accent); }
+    .action-primary, .button-primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #17130a;
+    }
+    .action-primary:hover, .button-primary:hover { background: #ffc43a; color: #17130a; }
+
+    .empty-state { padding: 48px 20px; color: var(--muted); text-align: center; font-size: 13px; }
+    .error { min-height: 18px; margin: 12px 0; color: #ff938b; font-size: 12px; }
+    [hidden] { display: none !important; }
+
+    .login-wrap { display: grid; min-height: 72vh; place-items: center; }
+    .login-card { width: min(410px, 100%); padding: 30px; }
+    .login-card h1 { font-size: 27px; }
+    .login-card > p:not(.eyebrow) { margin: 9px 0 24px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .login-form { display: grid; gap: 12px; }
+    .login-input { min-height: 45px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; outline: none; background: #10110f; color: inherit; }
+    .login-form .button { min-height: 43px; }
+
+    @media (max-width: 600px) {
+      .shell { width: min(100% - 28px, 1050px); padding-top: 22px; }
+      .intro { margin-top: 48px; }
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .search { width: 100%; }
+      .message-card { padding: 17px; }
+      .message-heading { flex-direction: column; gap: 8px; }
+      .message-footer { align-items: flex-start; flex-direction: column; }
+      .actions { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="HEX TECH home">
+        <span class="brand-mark">HX</span>
+        <span>HEX<span>TECH</span></span>
+      </a>
+      <div class="brand">
+        <button class="button" id="logout-button" type="button" hidden>Sign out</button>
+        <a class="subtle-link" href="/">View portfolio ↗</a>
+      </div>
+    </header>
+
+    <section id="login-view" class="login-wrap" hidden>
+      <div class="login-card">
+        <p class="eyebrow">Private workspace</p>
+        <h1>Message inbox</h1>
+        <p>Sign in with the admin password configured for this server.</p>
+        <form class="login-form" id="login-form">
+          <input class="login-input" id="admin-password" type="password" autocomplete="current-password" placeholder="Admin password" required>
+          <button class="button button-primary" type="submit">Sign in</button>
+        </form>
+        <p class="error" id="login-error" role="alert"></p>
+      </div>
+    </section>
+
+    <section id="inbox-view" hidden>
+      <div class="intro">
+        <p class="eyebrow">Private workspace</p>
+        <h1>Message inbox</h1>
+        <p>Contact requests, all in one place.</p>
+      </div>
+      <div class="toolbar">
+        <input class="search" id="search" type="search" maxlength="100" placeholder="Search name, email, phone, or message" aria-label="Search contact messages">
+        <div class="count" id="count" aria-live="polite"></div>
+      </div>
+      <div class="selection-toolbar">
+        <div class="selection-tools">
+          <label class="select-all"><input id="select-all" type="checkbox"> Select visible</label>
+          <span class="selected-count" id="selected-count" aria-live="polite">0 selected</span>
+        </div>
+        <div class="actions">
+          <button class="button" id="clear-selection" type="button" disabled>Clear selection</button>
+          <button class="button button-danger" id="delete-selected" type="button" disabled>Delete selected</button>
+        </div>
+      </div>
+      <p class="error" id="inbox-error" role="alert"></p>
+      <div class="message-list" id="message-list"></div>
+    </section>
+  </main>
+
+  <script>
+    const loginView = document.querySelector("#login-view");
+    const inboxView = document.querySelector("#inbox-view");
+    const loginForm = document.querySelector("#login-form");
+    const loginError = document.querySelector("#login-error");
+    const inboxError = document.querySelector("#inbox-error");
+    const messageList = document.querySelector("#message-list");
+    const searchInput = document.querySelector("#search");
+    const count = document.querySelector("#count");
+    const selectAll = document.querySelector("#select-all");
+    const selectedCount = document.querySelector("#selected-count");
+    const clearSelectionButton = document.querySelector("#clear-selection");
+    const deleteSelectedButton = document.querySelector("#delete-selected");
+    const selectedMessageIds = new Set();
+    let searchTimer;
+
+    async function requestJson(url, options) {
+      const response = await fetch(url, options);
+      const result = await response.json();
+      if (!response.ok) {
+        const error = new Error(result.error || "The request could not be completed.");
+        error.status = response.status;
+        throw error;
+      }
+      return result;
+    }
+
+    function showLogin(error = "") {
+      inboxView.hidden = true;
+      loginView.hidden = false;
+      document.querySelector("#logout-button").hidden = true;
+      loginError.textContent = error;
+      document.querySelector("#admin-password").focus();
+    }
+
+    function makeLink(label, href, className = "action", newTab = false) {
+      const link = document.createElement("a");
+      link.className = className;
+      link.textContent = label;
+      link.href = href;
+      if (newTab) {
+        link.target = "_blank";
+        link.rel = "noreferrer";
+      }
+      return link;
+    }
+
+    function updateSelectionControls() {
+      const selected = selectedMessageIds.size;
+      const visibleCheckboxes = [...messageList.querySelectorAll(".message-select")];
+      const selectedVisible = visibleCheckboxes.filter((checkbox) => checkbox.checked).length;
+      selectAll.checked = visibleCheckboxes.length > 0 && selectedVisible === visibleCheckboxes.length;
+      selectAll.indeterminate = selectedVisible > 0 && selectedVisible < visibleCheckboxes.length;
+      selectedCount.textContent = `${selected} selected`;
+      clearSelectionButton.disabled = selected === 0;
+      deleteSelectedButton.disabled = selected === 0;
+    }
+
+    function clearSelection() {
+      selectedMessageIds.clear();
+      messageList.querySelectorAll(".message-select").forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+      updateSelectionControls();
+    }
+
+    function renderMessages(messages) {
+      messageList.replaceChildren();
+      count.textContent = `${messages.length}${messages.length === 500 ? "+" : ""} ${messages.length === 1 ? "message" : "messages"}`;
+      const visibleIds = new Set(messages.map((message) => message.id));
+      for (const id of selectedMessageIds) {
+        if (!visibleIds.has(id)) selectedMessageIds.delete(id);
+      }
+
+      if (messages.length === 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = searchInput.value.trim()
+          ? "No messages match your search."
+          : "No messages yet. New contact requests will appear here.";
+        messageList.append(empty);
+        updateSelectionControls();
+        return;
+      }
+
+      for (const message of messages) {
+        const card = document.createElement("article");
+        card.className = "message-card";
+
+        const heading = document.createElement("div");
+        heading.className = "message-heading";
+        const senderGroup = document.createElement("div");
+        senderGroup.className = "sender-group";
+        const selectMessage = document.createElement("input");
+        selectMessage.className = "message-select";
+        selectMessage.type = "checkbox";
+        selectMessage.checked = selectedMessageIds.has(message.id);
+        selectMessage.dataset.messageId = String(message.id);
+        selectMessage.setAttribute("aria-label", `Select message from ${message.name}`);
+        selectMessage.addEventListener("change", () => {
+          if (selectMessage.checked) {
+            selectedMessageIds.add(message.id);
+          } else {
+            selectedMessageIds.delete(message.id);
+          }
+          updateSelectionControls();
+        });
+        const sender = document.createElement("div");
+        sender.className = "sender";
+        const name = document.createElement("h2");
+        name.textContent = message.name;
+        sender.append(name, makeLink(message.email, `mailto:${message.email}`));
+        const date = document.createElement("time");
+        date.className = "date";
+        date.dateTime = message.received_at;
+        const receivedAt = new Date(message.received_at);
+        date.textContent = Number.isNaN(receivedAt.getTime())
+          ? message.received_at
+          : receivedAt.toLocaleString();
+        senderGroup.append(selectMessage, sender);
+        heading.append(senderGroup, date);
+
+        const body = document.createElement("p");
+        body.className = "message-body";
+        body.textContent = message.message;
+
+        const footer = document.createElement("div");
+        footer.className = "message-footer";
+        const phone = document.createElement("span");
+        phone.className = "phone-label";
+        phone.textContent = message.phone || "No phone number provided";
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        const subject = encodeURIComponent("Re: your HEX TECH message");
+        const emailBody = encodeURIComponent(`Hi ${message.name},\n\nThank you for reaching out to HEX TECH.`);
+        const gmailCompose = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(message.email)}&su=${subject}&body=${emailBody}`;
+        actions.append(
+          makeLink("Gmail", gmailCompose, "action action-primary", true),
+          makeLink("Email", `mailto:${message.email}?subject=${subject}&body=${emailBody}`)
+        );
+
+        if (message.phone) {
+          const phoneNumber = message.phone.replace(/[^\d+]/g, "");
+          const whatsappNumber = message.phone.replace(/\D/g, "");
+          if (whatsappNumber) {
+            actions.append(makeLink("WhatsApp", `https://wa.me/${whatsappNumber}`, "action", true));
+          }
+          if (phoneNumber) {
+            actions.append(
+              makeLink("SMS", `sms:${phoneNumber}`, "action"),
+              makeLink("Call", `tel:${phoneNumber}`, "action")
+            );
+          }
+        }
+
+        footer.append(phone, actions);
+        card.append(heading, body, footer);
+        messageList.append(card);
+      }
+      updateSelectionControls();
+    }
+
+    async function loadMessages() {
+      inboxError.textContent = "";
+      const query = new URLSearchParams({ q: searchInput.value.trim() });
+      try {
+        const result = await requestJson(`/api/admin/messages?${query}`);
+        loginView.hidden = true;
+        inboxView.hidden = false;
+        document.querySelector("#logout-button").hidden = false;
+        renderMessages(result.messages);
+      } catch (error) {
+        if (error.status === 401) {
+          showLogin();
+          return;
+        }
+        loginView.hidden = true;
+        inboxView.hidden = false;
+        document.querySelector("#logout-button").hidden = false;
+        inboxError.textContent = error.message || "The inbox could not be loaded.";
+      }
+    }
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = loginForm.querySelector("button");
+      button.disabled = true;
+      loginError.textContent = "";
+      try {
+        await requestJson("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: document.querySelector("#admin-password").value })
+        });
+        loginForm.reset();
+        await loadMessages();
+      } catch (error) {
+        loginError.textContent = error.message || "Sign-in failed.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(loadMessages, 180);
+    });
+
+    selectAll.addEventListener("change", () => {
+      messageList.querySelectorAll(".message-select").forEach((checkbox) => {
+        checkbox.checked = selectAll.checked;
+        const id = Number(checkbox.dataset.messageId);
+        if (selectAll.checked) {
+          selectedMessageIds.add(id);
+        } else {
+          selectedMessageIds.delete(id);
+        }
+      });
+      updateSelectionControls();
+    });
+
+    clearSelectionButton.addEventListener("click", clearSelection);
+
+    deleteSelectedButton.addEventListener("click", async () => {
+      const messageIds = [...selectedMessageIds];
+      if (messageIds.length === 0) return;
+      const confirmed = window.confirm(
+        `Permanently delete ${messageIds.length} selected ${messageIds.length === 1 ? "message" : "messages"}? This cannot be undone.`
+      );
+      if (!confirmed) return;
+
+      deleteSelectedButton.disabled = true;
+      inboxError.textContent = "";
+      try {
+        const result = await requestJson("/api/admin/messages/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message_ids: messageIds })
+        });
+        clearSelection();
+        await loadMessages();
+        inboxError.textContent = `${result.deleted} ${result.deleted === 1 ? "message" : "messages"} deleted.`;
+      } catch (error) {
+        if (error.status === 401) {
+          showLogin();
+          return;
+        }
+        inboxError.textContent = error.message || "The selected messages could not be deleted.";
+      } finally {
+        updateSelectionControls();
+      }
+    });
+
+    document.querySelector("#logout-button").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        await requestJson("/api/admin/logout", { method: "POST" });
+        showLogin();
+      } catch (error) {
+        inboxError.textContent = error.message || "Sign-out failed.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    loadMessages();
+  </script>
+</body>
+</html>
