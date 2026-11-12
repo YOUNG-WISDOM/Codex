@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="theme-color" content="#f2f3ed">
+	<title>Invoice Studio</title>
+	<style>
+		:root {
+			color-scheme: light;
+			--ink: #1c2823;
+			--muted: #77817a;
+			--line: #dfe3dc;
+			--canvas: #f2f3ed;
+			--paper: #fffefa;
+			--green: #275d49;
+			--green-dark: #1c4738;
+			--mint: #d9e9de;
+			--orange: #d96d45;
+			--print-page-size: A4;
+			--serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+			--sans: "Aptos", "Segoe UI", sans-serif;
+		}
+		* { box-sizing: border-box; }
+		body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--sans); font-size: 14px; }
+		button, input, textarea, select { font: inherit; }
+		button { cursor: pointer; }
+		.topbar { min-height: 74px; padding: 0 5.2vw; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); background: rgba(255,254,250,.84); }
+		.brand { display: flex; gap: 12px; align-items: center; color: var(--ink); text-decoration: none; }
+		.brand-mark { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 10px 10px 10px 3px; background: var(--green); color: white; font: 800 13px var(--sans); }
+		.brand-name { font-size: 14px; font-weight: 750; letter-spacing: .03em; }
+		.brand-caption { margin-top: 2px; color: var(--muted); font-size: 11px; }
+		.top-actions { display: flex; gap: 10px; align-items: center; }
+		.save-state { margin-right: 10px; color: var(--muted); font-size: 12px; }
+		.print-size-wrap { display: flex; align-items: center; gap: 7px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: rgba(255,254,250,.8); }
+		.print-size-wrap label { margin: 0; color: var(--muted); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+		.print-size-wrap select { width: auto; min-width: 84px; min-height: 34px; padding: 6px 8px; background: transparent; border: 0; box-shadow: none; }
+		.button { min-height: 40px; padding: 0 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink); font-weight: 650; }
+		.layout.preview-only { grid-template-columns: 1fr; }
+		.layout.preview-only .editor { display: none; }
+		.layout.preview-only .preview-wrap { position: static; width: min(100%, 860px); margin: 0 auto; }
+		.button:hover { border-color: #aebbb0; background: #fff; }
+		.button.primary { border-color: var(--green); background: var(--green); color: #fff; }
+		.button.primary:hover { background: var(--green-dark); }
+		.button.quiet { min-height: 34px; padding: 0 10px; background: transparent; font-size: 12px; }
+		.button.danger { color: #a64b36; }
+		.layout { max-width: 1500px; margin: 0 auto; padding: 35px 5.2vw 70px; display: grid; grid-template-columns: minmax(330px, .82fr) minmax(500px, 1.18fr); gap: clamp(26px, 4vw, 66px); align-items: start; }
+		.editor-heading { margin-bottom: 23px; }
+		.eyebrow { margin-bottom: 8px; color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+		h1 { margin: 0; font: 34px/1.05 var(--serif); letter-spacing: 0; }
+		.intro { margin: 9px 0 0; color: var(--muted); font-size: 13px; }
+		.section { padding: 19px 0 21px; border-top: 1px solid var(--line); }
+		.section-title { margin: 0 0 15px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 800; }
+		.section-title span { color: var(--muted); font-size: 10px; font-weight: 650; }
+		.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+		.field { min-width: 0; }
+		.field.full { grid-column: 1 / -1; }
+		label { display: block; margin: 0 0 6px; color: #66736b; font-size: 10px; font-weight: 750; letter-spacing: .045em; text-transform: uppercase; }
+		input, textarea, select { width: 100%; min-height: 39px; padding: 9px 10px; border: 1px solid #dfe3dc; border-radius: 4px; outline: none; background: rgba(255,254,250,.8); color: var(--ink); }
+		input:focus, textarea:focus, select:focus { border-color: #688b77; box-shadow: 0 0 0 2px rgba(39,93,73,.1); }
+		textarea { min-height: 65px; resize: vertical; }
+		input::placeholder, textarea::placeholder { color: #a0a8a1; }
+		.items-head, .item-row { display: grid; grid-template-columns: minmax(90px, 1fr) 62px 91px 28px; gap: 8px; align-items: end; }
+		.items-head { margin-bottom: 7px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+		.item-row { margin-bottom: 8px; }
+		.item-row input { min-width: 0; padding: 8px; }
+		.item-row .remove { width: 28px; height: 37px; padding: 0; border: 0; background: transparent; color: #9b6251; font-size: 19px; }
+		.item-row .remove:hover { color: #b33f2b; }
+		.items-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; }
+		.invoice-reference { margin-top: 16px; }
+		.preview-wrap { position: sticky; top: 22px; }
+		.preview-toolbar { min-height: 39px; margin: 0 0 11px; display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 11px; }
+		.preview-toolbar strong { color: var(--ink); font-size: 12px; }
+		.paper { width: 100%; min-height: 745px; padding: clamp(32px, 4.4vw, 62px); background: var(--paper); box-shadow: 0 12px 42px rgba(43,53,45,.09); }
+		body.thermal-print .paper { width: 72mm; min-height: 0; padding: 4mm; }
+		body.thermal-print .paper-head { display: block; padding-bottom: 3mm; }
+		body.thermal-print .paper-company { max-width: none; }
+		body.thermal-print .paper-brand { width: 24px; height: 24px; margin-bottom: 2mm; font-size: 9px; }
+		body.thermal-print .paper-company-name { font-size: 15px; }
+		body.thermal-print .paper-company-details { margin-top: 1mm; font-size: 8px; line-height: 1.35; }
+		body.thermal-print .paper-head > div:last-child { margin-top: 3mm; text-align: left; }
+		body.thermal-print .invoice-title { text-align: left; }
+		body.thermal-print .invoice-number { margin-top: 1mm; font-size: 18px; text-align: left; }
+		body.thermal-print .invoice-dates { margin-top: 1mm; font-size: 8px; line-height: 1.4; text-align: left; }
+		body.thermal-print .billto { padding: 4mm 0; }
+		body.thermal-print .paper-label { margin-bottom: 1mm; font-size: 8px; }
+		body.thermal-print .client-name { font-size: 15px; }
+		body.thermal-print .client-details { margin-top: 1mm; font-size: 8px; line-height: 1.35; }
+		body.thermal-print .invoice-table th { padding: 2mm 1px; font-size: 7px; letter-spacing: 0; }
+		body.thermal-print .invoice-table th:nth-child(1) { width: 42%; }
+		body.thermal-print .invoice-table th:nth-child(2) { width: 12%; }
+		body.thermal-print .invoice-table th:nth-child(3) { width: 20%; }
+		body.thermal-print .invoice-table th:nth-child(4) { width: 26%; }
+		body.thermal-print .invoice-table td { padding: 2mm 1px; font-size: 8px; }
+		body.thermal-print .totals { width: 100%; margin-top: 3mm; }
+		body.thermal-print .total-line { padding: 1mm 0; font-size: 8px; }
+		body.thermal-print .total-line.grand { margin-top: 1mm; padding-top: 2mm; font-size: 9px; }
+		body.thermal-print .total-line.grand strong { font-size: 15px; }
+		body.thermal-print .paper-bottom { margin-top: 5mm; padding-top: 2mm; }
+		body.thermal-print .paper-note { margin-top: 2mm; font-size: 8px; line-height: 1.35; }
+		body.thermal-print .paper-note strong { margin-bottom: 1mm; font-size: 7px; }
+		body.thermal-print .paper-thanks { margin-top: 4mm; font-size: 13px; }
+		.paper-head { display: flex; justify-content: space-between; gap: 30px; padding-bottom: 29px; border-bottom: 1px solid var(--line); }
+		.paper-company { max-width: 55%; }
+		.paper-brand { width: 38px; height: 38px; margin-bottom: 17px; display: grid; place-items: center; border-radius: 11px 11px 11px 3px; background: var(--green); color: white; font: 800 13px var(--sans); }
+		.paper-company-name { font: 21px/1.15 var(--serif); overflow-wrap: anywhere; }
+		.paper-company-details { margin-top: 9px; color: var(--muted); font-size: 10px; line-height: 1.7; white-space: pre-line; overflow-wrap: anywhere; }
+		.invoice-title { color: var(--green); font-size: 10px; font-weight: 850; letter-spacing: .2em; text-align: right; }
+		.invoice-number { margin-top: 8px; font: 24px var(--serif); text-align: right; overflow-wrap: anywhere; }
+		.invoice-dates { margin-top: 16px; color: var(--muted); font-size: 10px; line-height: 1.9; text-align: right; }
+		.invoice-dates b { color: var(--ink); font-weight: 650; }
+		.billto { padding: 27px 0 24px; }
+		.paper-label { margin-bottom: 9px; color: var(--green); font-size: 9px; font-weight: 850; letter-spacing: .15em; text-transform: uppercase; }
+		.client-name { font: 19px var(--serif); }
+		.client-details { margin-top: 6px; color: var(--muted); font-size: 10px; line-height: 1.7; white-space: pre-line; }
+		.invoice-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+		.invoice-table th { padding: 10px 5px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); color: #718078; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
+		.invoice-table th:first-child, .invoice-table td:first-child { padding-left: 0; }
+		.invoice-table th:not(:first-child), .invoice-table td:not(:first-child) { text-align: right; }
+		.invoice-table th:nth-child(1) { width: 48%; }
+		.invoice-table th:nth-child(2) { width: 13%; }
+		.invoice-table th:nth-child(3) { width: 19%; }
+		.invoice-table th:nth-child(4) { width: 20%; }
+		.invoice-table td { padding: 13px 5px; border-bottom: 1px solid #edf0eb; font-size: 10px; vertical-align: top; overflow-wrap: anywhere; }
+		.totals { width: min(245px, 100%); margin: 17px 0 0 auto; }
+		.total-line { display: flex; justify-content: space-between; gap: 15px; padding: 6px 0; color: #647169; font-size: 10px; }
+		.total-line strong { color: var(--ink); font-weight: 650; }
+		.total-line.grand { margin-top: 5px; padding: 12px 0 0; border-top: 1px solid var(--ink); color: var(--ink); font-size: 12px; font-weight: 800; }
+		.total-line.grand strong { color: var(--green); font: 21px var(--serif); }
+		.paper-bottom { margin-top: 39px; padding-top: 16px; border-top: 1px solid var(--line); }
+		.paper-note { margin-top: 15px; color: #6d7971; font-size: 10px; line-height: 1.65; white-space: pre-line; }
+		.paper-note strong { display: block; margin-bottom: 5px; color: var(--ink); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+		.paper-thanks { margin-top: 30px; color: var(--green); font: italic 17px var(--serif); }
+		@media (max-width: 970px) {
+			.topbar { padding: 0 24px; }
+			.layout { padding: 29px 24px 55px; grid-template-columns: minmax(285px, .88fr) minmax(390px, 1.12fr); gap: 24px; }
+			.paper { padding: 34px; }
+		}
+		@media (max-width: 720px) {
+			.topbar { min-height: 64px; padding: 0 17px; }
+			.save-state { display: none; }
+			.button { min-height: 38px; padding: 0 11px; font-size: 12px; }
+			.layout { display: flex; flex-direction: column; padding: 27px 17px 45px; gap: 32px; }
+			.editor, .preview-wrap { width: 100%; }
+			.preview-wrap { position: static; }
+			.layout.preview-only { display: block; }
+			.paper { min-height: auto; padding: 30px 24px; }
+			h1 { font-size: 31px; }
+		}
+		@media print {
+			@page { size: var(--print-page-size, A4); margin: 0; }
+			body { background: white; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+			.topbar, .editor, .preview-toolbar { display: none !important; }
+			.layout { display: block; max-width: none; margin: 0; padding: 0; }
+			.preview-wrap { position: static; }
+			.paper { width: 210mm; min-height: 297mm; margin: 0; padding: 17mm 19mm; box-shadow: none; }
+		}
+	</style>
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="#" aria-label="Invoice Studio">
+			<span class="brand-mark" id="brandMark">YC</span>
+			<span><span class="brand-name">Invoice Studio</span></span>
+		</a>
+		<div class="top-actions">
+			<span class="save-state" id="saveState" aria-live="polite">Saved on this device</span>
+			<button class="button quiet" id="toggleView" type="button" aria-pressed="false">Preview only</button>
+			<div class="print-size-wrap">
+				<label for="paperSize">Paper</label>
+				<select id="paperSize" aria-label="Select paper size">
+					<option value="A4">A4</option>
+					<option value="Letter">Letter</option>
+					<option value="Legal">Legal</option>
+					<option value="A5">A5</option>
+					<option value="A6">A6</option>
+					<option value="80mm">Thermal 80mm</option>
+				</select>
+			</div>
+			<button class="button" id="newInvoice" type="button">New invoice</button>
+			<button class="button primary" id="printInvoice" type="button"><span aria-hidden="true">▣</span> Print / PDF</button>
+		</div>
+	</header>
+
+	<main class="layout">
+		<section class="editor" aria-label="Invoice details">
+			<div class="editor-heading">
+				<div class="eyebrow">A clear way to get paid</div>
+				<h1>Invoice studio</h1>
+				<p class="intro">Create a polished invoice, ready to send or print.</p>
+			</div>
+
+			<section class="section">
+				<h2 class="section-title">Your company </h2>
+				<div class="field-grid">
+					<div class="field full"><label for="companyName">Business name</label>
+						<input id="companyName" data-company="name" placeholder="Your Company"></div>
+					<div class="field"><label for="companyEmail">Email</label>
+						<input id="companyEmail" data-company="email" type="email" placeholder="hello@company.com"></div>
+					<div class="field"><label for="companyPhone">Phone</label>
+						<input id="companyPhone" data-company="phone" type="tel" placeholder="+1 555 000 0000"></div>
+					<div class="field full"><label for="companyAddress">Business address</label>
+						<textarea id="companyAddress" data-company="address" placeholder="Street, city, postal code"></textarea></div>
+				</div>
+			</section>
+
+			<section class="section">
+				<h2 class="section-title">Bill to</h2>
+				<div class="field-grid">
+					<div class="field full"><label for="clientName">Client or company name</label>
+						<input id="clientName" data-field="clientName" placeholder="Client name"></div>
+					<div class="field"><label for="clientPhone">Phone</label>
+						<input id="clientPhone" data-field="clientPhone" type="tel" placeholder="Optional"></div>
+					<div class="field full"><label for="clientAddress">Billing address</label>
+						<textarea id="clientAddress" data-field="clientAddress" placeholder="Street, city, postal code"></textarea></div>
+				</div>
+			</section>
+
+			<section class="section">
+				<h2 class="section-title">Invoice details</h2>
+				<div class="field-grid">
+					<div class="field"><label for="invoiceNumber">Invoice number</label>
+						<input id="invoiceNumber" data-field="number"></div>
+					<div class="field"><label for="currency">Currency</label>
+						<select id="currency" data-field="currency">
+							<option value="USD">USD - US Dollar</option><option value="EUR">EUR - Euro</option><option value="GBP">GBP - Pound</option>
+							<option value="CAD">CAD - Canadian Dollar</option><option value="AUD">AUD - Australian Dollar</option><option value="NGN">NGN - Nigerian Naira</option>
+							<option value="GHS">GHS - Ghanaian Cedi</option><option value="KES">KES - Kenyan Shilling</option><option value="INR">INR - Indian Rupee</option>
+							<option value="ZAR">ZAR - South African Rand</option><option value="XOF">XOF - West African CFA</option></select></div>
+					<div class="field"><label for="deliveryDate">Date client receives items</label><input id="deliveryDate" data-field="deliveryDate" type="date"></div>
+				</div>
+			</section>
+
+			<section class="section">
+				<h2 class="section-title">Line items <span>Set quantity and rate</span></h2>
+				<div class="items-head" aria-hidden="true"><span>Description</span><span>Qty</span><span>Rate</span><span></span></div>
+				<div id="itemsEditor"></div>
+				<div class="items-footer"><button class="button quiet" id="addItem" type="button">＋ Add line item</button><span id="itemCount" class="brand-caption"></span></div>
+				<div class="invoice-reference">
+					<div class="field"><label for="reference">Reference</label><input id="reference" data-field="reference" placeholder="Optional reference"></div>
+				</div>
+			</section>
+
+			<section class="section">
+				<h2 class="section-title">Note and payment terms</h2>
+				<div class="field-grid">
+					<div class="field full"><label for="note">Message to your client</label><textarea id="note" data-field="note" placeholder="Thank you for your business."></textarea></div>
+					<div class="field full"><label for="paymentTerms">Payment instructions</label><textarea id="paymentTerms" data-field="paymentTerms" placeholder="Bank transfer details or other payment instructions"></textarea></div>
+				</div>
+			</section>
+		</section>
+
+		<section class="preview-wrap" aria-label="Live invoice preview">
+			<div class="preview-toolbar"><strong>INVOICE PREVIEW</strong></div>
+			<article class="paper" id="invoicePaper">
+				<div class="paper-head">
+					<div class="paper-company">
+						<div class="paper-brand" id="paperBrand" aria-hidden="true">YC</div>
+						<div class="paper-company-name" id="previewCompany">Your Company</div>
+						<div class="paper-company-details" id="previewCompanyDetails"></div>
+					</div>
+					<div>
+						<div class="invoice-title">INVOICE</div>
+						<div class="invoice-number" id="previewNumber">INV-0001</div>
+						<div class="invoice-dates"><div>DELIVERY DATE <b id="previewDeliveryDate"></b></div></div>
+					</div>
+				</div>
+				<div class="billto">
+					<div class="paper-label">Billed to</div>
+					<div class="client-name" id="previewClient">Client name</div>
+					<div class="client-details" id="previewClientDetails"></div>
+				</div>
+				<table class="invoice-table">
+					<thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+					<tbody id="previewItems"></tbody>
+				</table>
+				<div class="totals">
+					<div class="total-line"><span>Subtotal</span><strong id="previewSubtotal"></strong></div>
+					<div class="total-line grand"><span>Total due</span><strong id="previewTotal"></strong></div>
+				</div>
+				<div class="paper-bottom">
+					<div class="paper-note" id="previewReferenceWrap" hidden><strong>Reference</strong><span id="previewReference"></span></div>
+					<div class="paper-note" id="previewNoteWrap"><strong>Note</strong><span id="previewNote"></span></div>
+					<div class="paper-note" id="previewTermsWrap"><strong>Payment instructions</strong><span id="previewTerms"></span></div>
+					<div class="paper-thanks">Thank you for your business.</div>
+				</div>
+			</article>
+		</section>
+	</main>
+	<script>
+		const STORAGE_KEY = 'ledgerline-invoice-studio-v1';
+		const today = new Date();
+		const localDate = (date) => {
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const day = String(date.getDate()).padStart(2, '0');
+			return `${year}-${month}-${day}`;
+		};
+		const invoiceId = () => `INV-${localDate(new Date()).replaceAll('-', '')}-${String(Date.now()).slice(-4)}`;
+		const defaultState = () => ({
+			company: { name: '', email: '', phone: '', address: '' },
+			invoice: {
+				clientName: '', clientEmail: '', clientPhone: '', clientAddress: '', number: invoiceId(),
+				currency: 'USD', deliveryDate: localDate(today),
+				reference: '', note: 'Thank you for your business.', paymentTerms: ''
+			},
+			items: [{ description: '', quantity: '1', rate: '0' }]
+		});
+		const initialsFromName = (name = '') => {
+			const words = String(name).trim().split(/\s+/).filter(Boolean);
+			if (!words.length) return 'YC';
+			if (words.length === 1) return words[0].slice(0, 2).toUpperCase() || 'YC';
+			if (words.length >= 3) {
+				const first = words[0].charAt(0).toUpperCase();
+				const last = words[words.length - 1].charAt(0).toUpperCase();
+				return `${first}${last}`;
+			}
+			return words.map((word) => word.charAt(0).toUpperCase()).join('').slice(0, 2) || 'YC';
+		};
+		let state;
+		try {
+			state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultState();
+		} catch {
+			state = defaultState();
+		}
+		state.invoice.deliveryDate ??= state.invoice.issueDate ?? localDate(today);
+		delete state.invoice.issueDate;
+		delete state.invoice.dueDate;
+		delete state.invoice.taxRate;
+
+		const escapeText = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+		const currencyFormat = (amount) => {
+			const currency = state.invoice.currency || 'USD';
+			try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount); }
+			catch { return `${currency} ${amount.toFixed(2)}`; }
+		};
+		const displayDate = (value) => {
+			if (!value) return '—';
+			const [year, month, day] = value.split('-').map(Number);
+			return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(year, month - 1, day));
+		};
+		const numberValue = (value) => Number.parseFloat(value) || 0;
+
+		function fillForm() {
+			document.querySelectorAll('[data-company]').forEach((input) => { input.value = state.company[input.dataset.company] || ''; });
+			document.querySelectorAll('[data-field]').forEach((input) => { input.value = state.invoice[input.dataset.field] ?? ''; });
+			renderItemsEditor();
+		}
+
+		function renderItemsEditor() {
+			const root = document.getElementById('itemsEditor');
+			root.replaceChildren();
+			state.items.forEach((item, index) => {
+				const row = document.createElement('div');
+				row.className = 'item-row';
+				row.innerHTML = `<input aria-label="Item ${index + 1} description" data-item="description" data-index="${index}" placeholder="Service or product" value="${escapeText(item.description)}"><input aria-label="Item ${index + 1} quantity" data-item="quantity" data-index="${index}" type="number" min="0" step="any" inputmode="decimal" value="${escapeText(item.quantity)}"><input aria-label="Item ${index + 1} rate" data-item="rate" data-index="${index}" type="number" min="0" step="0.01" inputmode="decimal" value="${escapeText(item.rate)}"><button class="remove" type="button" data-remove="${index}" aria-label="Remove item ${index + 1}" title="Remove item">×</button>`;
+				root.append(row);
+			});
+			document.getElementById('itemCount').textContent = `${state.items.length} ${state.items.length === 1 ? 'item' : 'items'}`;
+		}
+
+		function saveState() {
+			try {
+				localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+				document.getElementById('saveState').textContent = 'Saved on this device';
+			} catch {
+				document.getElementById('saveState').textContent = 'Could not save draft';
+			}
+		}
+
+		function setText(id, value) { document.getElementById(id).textContent = value; }
+
+		function renderPreview() {
+			const company = state.company;
+			const invoice = state.invoice;
+			const companyName = company.name || 'Your Company';
+			document.getElementById('brandMark').textContent = initialsFromName(companyName);
+			document.getElementById('paperBrand').textContent = initialsFromName(companyName);
+			setText('previewCompany', companyName);
+			setText('previewCompanyDetails', [company.address, company.email, company.phone].filter(Boolean).join('\n'));
+			setText('previewNumber', invoice.number || 'INV-0001');
+			setText('previewDeliveryDate', displayDate(invoice.deliveryDate));
+			setText('previewClient', invoice.clientName || 'Client name');
+			setText('previewClientDetails', [invoice.clientAddress, invoice.clientEmail, invoice.clientPhone].filter(Boolean).join('\n'));
+			const itemsRoot = document.getElementById('previewItems');
+			itemsRoot.replaceChildren();
+			const subtotal = state.items.reduce((sum, item) => sum + numberValue(item.quantity) * numberValue(item.rate), 0);
+			state.items.forEach((item) => {
+				const row = document.createElement('tr');
+				const description = document.createElement('td');
+				const quantity = document.createElement('td');
+				const rate = document.createElement('td');
+				const amount = document.createElement('td');
+				description.textContent = item.description || 'Item description';
+				quantity.textContent = item.quantity || '0';
+				rate.textContent = currencyFormat(numberValue(item.rate));
+				amount.textContent = currencyFormat(numberValue(item.quantity) * numberValue(item.rate));
+				row.append(description, quantity, rate, amount);
+				itemsRoot.append(row);
+			});
+			setText('previewSubtotal', currencyFormat(subtotal));
+			setText('previewTotal', currencyFormat(subtotal));
+			const referenceWrap = document.getElementById('previewReferenceWrap');
+			referenceWrap.hidden = !invoice.reference;
+			setText('previewReference', invoice.reference || '');
+			const noteWrap = document.getElementById('previewNoteWrap');
+			noteWrap.hidden = !invoice.note;
+			setText('previewNote', invoice.note || '');
+			const termsWrap = document.getElementById('previewTermsWrap');
+			termsWrap.hidden = !invoice.paymentTerms;
+			setText('previewTerms', invoice.paymentTerms || '');
+		}
+
+		document.addEventListener('input', (event) => {
+			const { target } = event;
+			if (target.dataset.company) state.company[target.dataset.company] = target.value;
+			if (target.dataset.field) state.invoice[target.dataset.field] = target.value;
+			if (target.dataset.item) state.items[Number(target.dataset.index)][target.dataset.item] = target.value;
+			if (target.matches('[data-company], [data-field], [data-item]')) {
+				renderPreview();
+				saveState();
+			}
+		});
+
+		document.getElementById('itemsEditor').addEventListener('click', (event) => {
+			const removeButton = event.target.closest('[data-remove]');
+			if (!removeButton) return;
+			state.items.splice(Number(removeButton.dataset.remove), 1);
+			if (!state.items.length) state.items.push({ description: '', quantity: '1', rate: '0' });
+			renderItemsEditor();
+			renderPreview();
+			saveState();
+		});
+
+		document.getElementById('addItem').addEventListener('click', () => {
+			state.items.push({ description: '', quantity: '1', rate: '0' });
+			renderItemsEditor();
+			renderPreview();
+			saveState();
+			document.querySelector('#itemsEditor [data-index="' + (state.items.length - 1) + '"]')?.focus();
+		});
+
+		const layout = document.querySelector('.layout');
+		const toggleViewButton = document.getElementById('toggleView');
+		const paperSizeSelect = document.getElementById('paperSize');
+		const printPageStyle = document.createElement('style');
+		document.head.append(printPageStyle);
+		let previewOnly = false;
+
+		function applyPaperSize() {
+			const isThermal = paperSizeSelect.value === '80mm';
+			document.body.classList.toggle('thermal-print', isThermal);
+			const pageSize = isThermal
+				? `80mm ${Math.ceil(document.getElementById('invoicePaper').getBoundingClientRect().height * 25.4 / 96 + 6)}mm`
+				: paperSizeSelect.value;
+			document.documentElement.style.setProperty('--print-page-size', pageSize);
+			printPageStyle.textContent = `@page { size: ${pageSize}; margin: 0; }`;
+		}
+
+		function updateViewState() {
+			layout.classList.toggle('preview-only', previewOnly);
+			toggleViewButton.textContent = previewOnly ? 'Show editor' : 'Preview only';
+			toggleViewButton.setAttribute('aria-pressed', String(previewOnly));
+		}
+
+		paperSizeSelect.addEventListener('change', applyPaperSize);
+
+		document.getElementById('toggleView').addEventListener('click', () => {
+			previewOnly = !previewOnly;
+			updateViewState();
+		});
+
+		document.getElementById('printInvoice').addEventListener('click', () => {
+			applyPaperSize();
+			window.print();
+		});
+		document.getElementById('newInvoice').addEventListener('click', () => {
+			if (!window.confirm('Start a new invoice? The company profile will be kept.')) return;
+			const company = state.company;
+			state = defaultState();
+			state.company = company;
+			fillForm();
+			renderPreview();
+			saveState();
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		});
+
+		updateViewState();
+		fillForm();
+		renderPreview();
+	</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+__pycache__/
+data/contact-messages.jsonl
+data/wisdom-market.sqlite3
+data/wisdom-market.sqlite3-shm
+data/wisdom-market.sqlite3-wal
